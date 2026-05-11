@@ -15,9 +15,11 @@ class LLM:
     def __init__(self, model_name):
 
         self.model_name = model_name
+        model_folder = (f"models/{model_name.split('/')[-1]}")
 
         self.tokenizer = AutoTokenizer.from_pretrained(
-            model_name
+            model_name,
+            cache_dir=model_folder,
         )
 
         quant_config = None
@@ -30,8 +32,9 @@ class LLM:
                 bnb_4bit_use_double_quant=True
             )
 
-        self.model = AutoModelForCausalLM.from_pretrained(
+        self.model = AutoModelForCausalLM.from_pretrained(            
             model_name,
+            cache_dir=model_folder,
             device_map="auto",
             quantization_config=quant_config,
             torch_dtype=torch.float16
