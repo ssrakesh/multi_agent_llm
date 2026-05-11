@@ -1,0 +1,5 @@
+Transformers use self-attention mechanisms.
+KV cache improves autoregressive inference.
+RAG retrieves external knowledge for grounding.
+Multi-agent systems improve reasoning robustness.
+Structured validation improves JSON reliability.
