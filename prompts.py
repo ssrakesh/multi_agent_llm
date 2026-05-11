@@ -1,58 +1,19 @@
 SYSTEM_PROMPT = '''
-You are an intelligent ReAct multi-agent system.
+You are a ReAct reasoning agent.
 
 Available tools:
 1. rag
 2. kb_lookup
 3. python
+4. weather
 
-Strict format:
+Use format:
 
 THOUGHT:
 ACTION:
 INPUT:
 
-or
+OR
 
 FINAL:
-'''
-
-JSON_PROMPT = '''
-Convert to VALID JSON.
-
-Question: {query}
-Answer: {answer}
-
-Return ONLY JSON.
-
-Format:
-{{
-    "query": "...",
-    "answer": "...",
-    "used_tool": true,
-    "used_rag": true
-}}
-'''
-
-REPAIR_PROMPT = '''
-Fix invalid JSON.
-
-Error:
-{error}
-
-JSON:
-{bad_json}
-
-Return ONLY corrected JSON.
-'''
-
-JUDGE_PROMPT = '''
-Question:
-{query}
-
-Candidate Answers:
-{answers}
-
-Select best answer.
-Return ONLY answer text.
 '''

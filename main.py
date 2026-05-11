@@ -1,30 +1,38 @@
 from pipeline import MultiAgentPipeline
 from rag import RAGSystem
-from tools import kb_lookup_tool, python_tool
+from tools import (
+    weather_tool,
+    python_tool,
+    kb_lookup_tool
+)
+from evaluation import Evaluator
 
-knowledge_base = [
-    "Transformers use self-attention.",
-    "KV cache improves inference efficiency.",
-    "RAG retrieves external knowledge."
+kb = [
+    "KV cache reduces autoregressive recomputation.",
+    "Quantization reduces VRAM usage.",
+    "RAG reduces hallucinations.",
+    "Self-consistency improves reasoning robustness.",
+    "Tool restraint avoids unnecessary API calls."
 ]
 
 TOOLS = {
-    "kb_lookup": lambda q: kb_lookup_tool(
-        q,
-        knowledge_base
-    ),
-    "python": python_tool
+    "weather": weather_tool,
+    "python": python_tool,
+    "kb_lookup": lambda q:
+        kb_lookup_tool(q, kb)
 }
 
-rag_system = RAGSystem()
+rag = RAGSystem()
 
 pipeline = MultiAgentPipeline(
     TOOLS,
-    rag_system
+    rag
 )
 
-query = "Explain KV cache optimization"
+evaluator = Evaluator(
+    pipeline
+)
 
-result = pipeline.run(query)
-
-print(result)
+evaluator.evaluate(
+    "inputs.json"
+)

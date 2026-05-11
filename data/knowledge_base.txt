@@ -1,5 +1,9 @@
-Transformers use self-attention mechanisms.
-KV cache improves autoregressive inference.
-RAG retrieves external knowledge for grounding.
-Multi-agent systems improve reasoning robustness.
-Structured validation improves JSON reliability.
+KV cache reduces autoregressive recomputation.
+Quantization reduces VRAM usage.
+RAG reduces hallucinations using retrieval grounding.
+ReAct combines reasoning and external tool execution.
+Self-consistency improves reasoning robustness.
+Tool restraint avoids unnecessary API usage.
+GGUF models are optimized for llama.cpp inference.
+Arithmetic reasoning requires multi-step planning.
+Symbolic reasoning evaluates logical tradeoffs.

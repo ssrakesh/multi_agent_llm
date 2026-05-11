@@ -1,107 +1,39 @@
+from llama_cpp import Llama
+from logger import sys_log
 import gc
 import os
-import torch
-
-from transformers import (
-    AutoTokenizer,
-    AutoModelForCausalLM,
-    BitsAndBytesConfig
-)
-
-from config import *
 
 class LLM:
 
-    def __init__(self, model_name):
+    def __init__(self, model_path):
 
-        self.model_name = model_name
-        model_folder = (f"models/{model_name.split('/')[-1]}")
+        self.model_path = model_path
 
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            model_name,
-            cache_dir=model_folder,
+        sys_log(f"Loading model -> {model_path}")
+        # Hide llama.cpp Noise
+        os.environ["LLAMA_CPP_LOG_LEVEL"] = "0"
+        self.llm = Llama(
+            model_path=model_path,
+            n_ctx=4096,
+            n_gpu_layers=35,
+            verbose=False
         )
 
-        quant_config = None
+    def generate(self, prompt):
 
-        if USE_4BIT:
-            quant_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype=torch.float16,
-                bnb_4bit_use_double_quant=True
-            )
-
-        self.model = AutoModelForCausalLM.from_pretrained(            
-            model_name,
-            cache_dir=model_folder,
-            device_map="auto",
-            quantization_config=quant_config,
-            torch_dtype=torch.float16
+        output = self.llm(
+            prompt,
+            max_tokens=128,
+            temperature=0.7,
+            top_p=0.9
         )
 
-    def generate(self, prompt, past_key_values=None):
+        return output["choices"][0]["text"]
 
-        formatted_prompt = (
-            f"<start_of_turn>user\n{prompt}<end_of_turn>\n"
-            f"<start_of_turn>model\n"
-        )
+    def unload(self):
 
-        inputs = self.tokenizer(
-            formatted_prompt,
-            return_tensors="pt"
-        ).to(self.model.device)
+        sys_log(f"Unloading model -> {self.model_path}")
 
-        outputs = self.model.generate(
-            **inputs,
-            max_new_tokens=MAX_NEW_TOKENS,
-            do_sample=True,
-            temperature=TEMPERATURE,
-            top_p=TOP_P,
-            use_cache=True,
-            return_dict_in_generate=True
-        )
+        del self.llm
 
-        text = self.tokenizer.decode(
-            outputs.sequences[0],
-            skip_special_tokens=True
-        )
-
-        return {
-            "text": text,
-            "past_key_values": outputs.past_key_values
-        }
-
-    def save_kv_cache(self, cache, cache_name):
-
-        if not ENABLE_KV_CACHE_PERSISTENCE:
-            return
-
-        os.makedirs(KV_CACHE_DIR, exist_ok=True)
-
-        path = f"{KV_CACHE_DIR}/{cache_name}.pt"
-
-        torch.save(cache, path)
-
-    def load_kv_cache(self, cache_name):
-
-        path = f"{KV_CACHE_DIR}/{cache_name}.pt"
-
-        if not os.path.exists(path):
-            return None
-
-        cache = torch.load(path)
-
-        cache = tuple(
-            tuple(t.to(self.model.device) for t in layer)
-            for layer in cache
-        )
-
-        return cache
-
-    def unload_model(self):
-
-        del self.model
-
-        torch.cuda.empty_cache()
         gc.collect()

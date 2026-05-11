@@ -21,7 +21,10 @@ sdist/
 var/
 wheels/
 share/python-wheels/
+
+#model related files
 models/
+kv_cache/
 
 *.egg-info/
 

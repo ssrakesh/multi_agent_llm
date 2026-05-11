@@ -1,8 +1,7 @@
-transformers
-accelerate
-bitsandbytes
+llama-cpp-python
 sentence-transformers
 faiss-cpu
 pydantic
-torch
 numpy
+requests
+tabulate

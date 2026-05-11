@@ -4,9 +4,6 @@ echo ============================================
 echo Multi-Agent LLM System Startup
 echo ============================================
 
-ECHO ------------Install manually ------------
-ECHO  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-ECHO ------------ 
 
 REM ============================================
 REM Activate virtual environment
