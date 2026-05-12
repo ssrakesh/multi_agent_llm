@@ -1,7 +1,9 @@
+import os
+os.environ["LLAMA_CPP_LOG_LEVEL"] = "0"
+
 from llama_cpp import Llama
 from logger import sys_log
-import gc
-import os
+from config import *
 
 class LLM:
 
@@ -10,8 +12,7 @@ class LLM:
         self.model_path = model_path
 
         sys_log(f"Loading model -> {model_path}")
-        # Hide llama.cpp Noise
-        os.environ["LLAMA_CPP_LOG_LEVEL"] = "0"
+
         self.llm = Llama(
             model_path=model_path,
             n_ctx=4096,
@@ -23,9 +24,9 @@ class LLM:
 
         output = self.llm(
             prompt,
-            max_tokens=128,
-            temperature=0.7,
-            top_p=0.9
+            max_tokens=MAX_NEW_TOKENS,
+            temperature=TEMPERATURE,
+            top_p=TOP_P
         )
 
         return output["choices"][0]["text"]
@@ -35,5 +36,3 @@ class LLM:
         sys_log(f"Unloading model -> {self.model_path}")
 
         del self.llm
-
-        gc.collect()

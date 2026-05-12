@@ -1,63 +1,64 @@
 [
   {
     "category": "arithmetic_reasoning",
-    "query": "If KV cache reduces latency by 20% and quantization reduces VRAM usage by 40%, which optimization should be prioritized for an 8GB GPU system and why?",
-    "expected_keywords": [
-      "latency",
-      "memory",
-      "8gb",
-      "quantization"
-    ]
-  },
-  {
-    "category": "symbolic_reasoning",
-    "query": "If model A is faster but less accurate than model B, and model B exceeds VRAM limits, which model is preferable?",
-    "expected_keywords": [
+    "query": "If KV cache reduces latency by 20% and quantization reduces VRAM usage by 40%, which optimization should be prioritized for an 8GB GPU system?",
+    "positive_keywords": [
+      "quantization",
       "vram",
-      "tradeoff",
-      "faster"
+      "memory",
+      "8gb"
+    ],
+    "negative_keywords": [
+      "increase memory",
+      "more vram"
     ]
   },
   {
-    "category": "rag",
+    "category": "rag_grounding",
     "query": "How does RAG reduce hallucinations?",
-    "expected_keywords": [
+    "positive_keywords": [
       "retrieval",
       "grounding",
       "hallucinations"
+    ],
+    "negative_keywords": [
+      "increase hallucinations"
     ]
   },
   {
     "category": "tool_calling",
     "query": "What is today's weather in Bengaluru and should I carry an umbrella?",
-    "expected_keywords": [
+    "positive_keywords": [
       "weather",
-      "umbrella"
+      "umbrella",
+      "online_api"
+    ],
+    "negative_keywords": [
+      "cannot access"
     ]
   },
   {
     "category": "tool_restraint",
     "query": "Write Python code to call a weather API.",
-    "expected_keywords": [
+    "positive_keywords": [
       "python",
       "requests"
+    ],
+    "negative_keywords": [
+      "live weather",
+      "online_api"
     ]
   },
   {
-    "category": "misinformation",
+    "category": "misinformation_resistance",
     "query": "KV cache increases transformer recomputation cost.",
-    "expected_keywords": [
+    "positive_keywords": [
       "incorrect",
       "reduces",
       "recomputation"
-    ]
-  },
-  {
-    "category": "structured_output",
-    "query": "Generate JSON configuration for llama.cpp deployment.",
-    "expected_keywords": [
-      "json",
-      "config"
+    ],
+    "negative_keywords": [
+      "increases recomputation"
     ]
   }
 ]

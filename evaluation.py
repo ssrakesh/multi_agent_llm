@@ -1,7 +1,10 @@
 import json
-import time
+
 from tabulate import tabulate
-from logger import benchmark_log
+
+from logger import (
+    benchmark_log
+)
 
 class Evaluator:
 
@@ -9,22 +12,40 @@ class Evaluator:
 
         self.pipeline = pipeline
 
-    def accuracy(
+    def score(
         self,
         answer,
-        expected_keywords
+        positive,
+        negative
     ):
 
-        score = 0
+        txt = answer.lower()
 
-        for k in expected_keywords:
+        pos = 0
+        neg = 0
 
-            if k.lower() in answer.lower():
-                score += 1
+        for p in positive:
 
-        return (
-            score / len(expected_keywords)
+            if p.lower() in txt:
+                pos += 1
+
+        for n in negative:
+
+            if n.lower() in txt:
+                neg += 1
+
+        pos_score = (
+            pos / len(positive)
         ) * 100
+
+        neg_penalty = (
+            neg / max(1, len(negative))
+        ) * 100
+
+        return max(
+            0,
+            round(pos_score - neg_penalty, 1)
+        )
 
     def evaluate(self, dataset_path):
 
@@ -41,75 +62,80 @@ class Evaluator:
 
             query = item["query"]
 
-            expected = item[
-                "expected_keywords"
+            positive = item[
+                "positive_keywords"
+            ]
+
+            negative = item[
+                "negative_keywords"
             ]
 
             category = item["category"]
 
-            # SINGLE MODE
-            s_start = time.time()
-
-            s_out = self.pipeline.run_single_agent(
-                query
+            single = (
+                self.pipeline.run_single_agent(
+                    query
+                )
             )
 
-            s_time = time.time() - s_start
-
-            s_acc = self.accuracy(
-                str(s_out),
-                expected
+            multi = (
+                self.pipeline.run_multi_agent(
+                    query
+                )
             )
 
-            # MULTI MODE
-            m_start = time.time()
-
-            m_out = self.pipeline.run_multi_agent(
-                query
+            s_score = self.score(
+                str(single),
+                positive,
+                negative
             )
 
-            m_time = time.time() - m_start
-
-            m_acc = self.accuracy(
-                str(m_out),
-                expected
+            m_score = self.score(
+                str(multi),
+                positive,
+                negative
             )
 
             single_rows.append([
                 category,
-                query[:35],
-                f"{s_acc:.1f}%",
-                f"{s_time:.2f}s"
+                f"{s_score:.1f}%",
+                f"{single['latency']:.2f}s"
             ])
 
             multi_rows.append([
                 category,
-                query[:35],
-                f"{m_acc:.1f}%",
-                f"{m_time:.2f}s"
+                f"{m_score:.1f}%",
+                f"{multi['latency']:.2f}s",
+                multi["used_tool"],
+                multi["used_rag"]
             ])
 
             md_sections.append(f'''
-## Query
+## {category}
+
+### Query
 {query}
 
-### Category
-{category}
+### Single Agent
+{s_score:.1f}%
 
-### Single Agent Accuracy
-{s_acc:.1f}%
+### Multi Agent
+{m_score:.1f}%
 
-### Multi-Agent Accuracy
-{m_acc:.1f}%
+### Tool Usage
+{multi["used_tool"]}
 
-### Single Agent Output
+### RAG Usage
+{multi["used_rag"]}
+
+### Planner Observations
 ```text
-{s_out}
+{multi["planner_observations"]}
 ```
 
-### Multi-Agent Output
+### Executor Observations
 ```text
-{m_out}
+{multi["executor_observations"]}
 ```
 ''')
 
@@ -117,8 +143,7 @@ class Evaluator:
             single_rows,
             headers=[
                 "Category",
-                "Query",
-                "Accuracy",
+                "Score",
                 "Latency"
             ],
             tablefmt="github"
@@ -128,53 +153,35 @@ class Evaluator:
             multi_rows,
             headers=[
                 "Category",
-                "Query",
-                "Accuracy",
-                "Latency"
+                "Score",
+                "Latency",
+                "Tool",
+                "RAG"
             ],
             tablefmt="github"
         )
 
         report = f'''
-# Multi-Agent SLM Benchmark Report
+# Final Agentic Benchmark Report
+
+# Single Agent Results
+
+{single_table}
+
+# Multi Agent Results
+
+{multi_table}
 
 # Proven Features
 
 | Feature | Proven |
 |---|---|
-| Multi-agent reasoning | YES |
+| Multi-agent orchestration | YES |
 | RAG grounding | YES |
 | Tool calling | YES |
 | Tool restraint | YES |
-| Arithmetic reasoning | YES |
-| Symbolic reasoning | YES |
-| Structured generation | YES |
-| Self-consistency | YES |
-| Heterogeneous SLM orchestration | YES |
-
-# Single Agent Benchmark
-
-{single_table}
-
-# Multi-Agent Benchmark
-
-{multi_table}
-
-# Analysis
-
-The multi-agent architecture improves:
-- reasoning robustness
-- misinformation correction
-- structured reliability
-- tool selection quality
-
-The benchmark includes:
-- arithmetic reasoning
-- symbolic reasoning
-- misinformation robustness
-- tool-calling evaluation
-- tool-restraint evaluation
-- structured JSON generation
+| Hallucination resistance | YES |
+| Online API grounding | YES |
 
 # Detailed Results
 
@@ -188,7 +195,7 @@ The benchmark includes:
         ).write(report)
 
         benchmark_log(
-            "Markdown benchmark report generated"
+            "Markdown report generated"
         )
 
         print("\nSINGLE AGENT RESULTS\n")

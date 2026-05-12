@@ -1,7 +1,6 @@
 llama-cpp-python
 sentence-transformers
 faiss-cpu
-pydantic
 numpy
 requests
 tabulate

@@ -11,6 +11,7 @@ class RAGSystem:
         )
 
         with open(path, encoding="utf-8") as f:
+
             self.docs = [
                 x.strip()
                 for x in f.readlines()

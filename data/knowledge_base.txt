@@ -1,9 +1,5 @@
 KV cache reduces autoregressive recomputation.
 Quantization reduces VRAM usage.
 RAG reduces hallucinations using retrieval grounding.
-ReAct combines reasoning and external tool execution.
-Self-consistency improves reasoning robustness.
-Tool restraint avoids unnecessary API usage.
-GGUF models are optimized for llama.cpp inference.
-Arithmetic reasoning requires multi-step planning.
-Symbolic reasoning evaluates logical tradeoffs.
+Grounding improves factual correctness.
+Tool restraint avoids unnecessary API calls.

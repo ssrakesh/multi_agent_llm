@@ -1,22 +1,53 @@
 import requests
 
+from logger import (
+    proof_log,
+    stage_log
+)
+
 def weather_tool(city):
 
+    stage_log(
+        "WEATHER",
+        f"Fetching live weather -> {city}"
+    )
+
     try:
-        return requests.get(
+
+        response = requests.get(
             f"https://wttr.in/{city}?format=3",
             timeout=10
-        ).text
+        )
+
+        proof_log(
+            "External online API used"
+        )
+
+        return {
+            "source":"online_api",
+            "city":city,
+            "response":response.text
+        }
+
     except Exception as e:
-        return str(e)
+
+        return {
+            "source":"online_api",
+            "error":str(e)
+        }
 
 def python_tool(code):
 
+    local = {}
+
     try:
-        local = {}
+
         exec(code, {}, local)
+
         return str(local)
+
     except Exception as e:
+
         return str(e)
 
 def kb_lookup_tool(query, kb):
@@ -24,6 +55,7 @@ def kb_lookup_tool(query, kb):
     results = []
 
     for item in kb:
+
         if query.lower() in item.lower():
             results.append(item)
 

@@ -1,21 +1,15 @@
-# Research Multi-Agent SLM Project
+# Clean Final Agentic Research Project
 
 ## Features
-- Multi-agent architecture
+- Multi-agent orchestration
 - Planner / Executor / Judge
 - RAG grounding
-- Tool-calling evaluation
+- Weather API tool
 - Tool restraint evaluation
-- Arithmetic reasoning benchmark
-- Structured JSON validation
-- Repair agent
-- State persistence
-- Benchmark comparison modes
+- Hallucination resistance evaluation
+- Benchmark comparison tables
 - Markdown report generation
 
 ## Run
-python main.py
 
-## Models
-Download models listed in config.py via lmstudio copy to \models folder 
-Put GGUF models in: models/
+python main.py
