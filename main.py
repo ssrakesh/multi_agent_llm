@@ -5,10 +5,15 @@ from rag import RAGSystem
 from tools import (
     weather_tool,
     python_tool,
-    kb_lookup_tool
+    kb_lookup_tool,
 )
 
 from evaluation import Evaluator
+
+from logger import error_log, section
+
+from config import STATES_DIR
+
 
 knowledge_base = [
 
@@ -20,7 +25,7 @@ knowledge_base = [
 
     "Grounding improves factual correctness.",
 
-    "Tool restraint avoids unnecessary API calls."
+    "Tool restraint avoids unnecessary API calls.",
 ]
 
 TOOLS = {
@@ -29,30 +34,35 @@ TOOLS = {
 
     "python": python_tool,
 
-    "kb_lookup": lambda q:
-        kb_lookup_tool(
-            q,
-            knowledge_base
-        )
+    "kb_lookup": lambda q: kb_lookup_tool(q, knowledge_base),
 }
+
+STATES_DIR.mkdir(parents=True, exist_ok=True)
+
 
 rag_system = RAGSystem()
 
-pipeline = MultiAgentPipeline(
-    TOOLS,
-    rag_system
+pipeline = MultiAgentPipeline(TOOLS, rag_system)
+
+evaluator = Evaluator(pipeline)
+
+section(
+    "Course project — benchmark run (Proposal.md / README artefact)",
 )
 
-evaluator = Evaluator(
-    pipeline
-)
+try:
 
-print("\n================================================")
-print("FINAL AGENTIC RESEARCH SYSTEM")
-print("================================================\n")
+    report_path = evaluator.evaluate(
+        "inputs.json",
+    )
 
-evaluator.evaluate(
-    "inputs.json"
-)
+except Exception as exc:
 
-print("\nReport generated -> evaluation_report.md")
+    error_log(
+        "Evaluation run aborted",
+        exc,
+    )
+
+    raise
+
+print(f"\nReport generated -> {report_path}")

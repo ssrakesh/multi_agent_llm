@@ -3,3 +3,7 @@ Quantization reduces VRAM usage.
 RAG reduces hallucinations using retrieval grounding.
 Grounding improves factual correctness.
 Tool restraint avoids unnecessary API calls.
+Semantic search compares query embeddings against passages via cosine similarity.
+Validators enforce APIs only accept JSON payloads that match declared schemas.
+Self-consistency aggregates multiple sampled trajectories before choosing a consensus answer.
+Judge-style routing favors answers that cite external or retrieved evidence where available.

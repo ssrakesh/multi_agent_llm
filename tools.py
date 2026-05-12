@@ -1,8 +1,9 @@
 import requests
 
 from logger import (
+    error_log,
     proof_log,
-    stage_log
+    stage_log,
 )
 
 def weather_tool(city):
@@ -31,6 +32,8 @@ def weather_tool(city):
 
     except Exception as e:
 
+        error_log("weather_tool HTTP or network failure", e)
+
         return {
             "source":"online_api",
             "error":str(e)
@@ -47,6 +50,8 @@ def python_tool(code):
         return str(local)
 
     except Exception as e:
+
+        error_log("python_tool exec failed", e)
 
         return str(e)
 

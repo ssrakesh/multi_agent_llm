@@ -1,32 +1,41 @@
 [
   {
-    "category": "arithmetic_reasoning",
-    "query": "If KV cache reduces latency by 20% and quantization reduces VRAM usage by 40%, which optimization should be prioritized for an 8GB GPU system?",
+    "category": "reasoning_tradeoffs",
+    "proof_point": "Multi-step reasoning + resource trade-offs (proposal: reasoning effectiveness)",
+    "query": "On an 8GB GPU, should an operator prioritize int4 quantization for VRAM headroom or chase KV-cache style decode optimizations for latency? Name trade-offs another engineer should record (throughput vs tail variance vs memory residency) if two teams disagree.",
     "positive_keywords": [
       "quantization",
       "vram",
-      "memory",
+      "latency",
+      "throughput",
+      "trade",
       "8gb"
     ],
     "negative_keywords": [
-      "increase memory",
-      "more vram"
+      "single metric settles it",
+      "no trade-offs"
     ]
   },
   {
     "category": "rag_grounding",
-    "query": "How does RAG reduce hallucinations?",
+    "proof_point": "RAG grounding (proposal: retrieval lowers hallucinations; when to retrieve)",
+    "query": "Explain how retrieval-augmented grounding reduces hallucination risk, then state when latency-budgeted agents should invoke retrieval versus answering from parametric memory alone.",
     "positive_keywords": [
       "retrieval",
       "grounding",
-      "hallucinations"
+      "hallucination",
+      "latency",
+      "evidence",
+      "memory"
     ],
     "negative_keywords": [
-      "increase hallucinations"
+      "retrieval always harmful",
+      "ignore sources"
     ]
   },
   {
     "category": "tool_calling",
+    "proof_point": "Appropriate live tool use (proposal: tool calling / API grounding)",
     "query": "What is today's weather in Bengaluru and should I carry an umbrella?",
     "positive_keywords": [
       "weather",
@@ -34,31 +43,57 @@
       "online_api"
     ],
     "negative_keywords": [
-      "cannot access"
+      "cannot access",
+      "offline only"
     ]
   },
   {
     "category": "tool_restraint",
-    "query": "Write Python code to call a weather API.",
+    "proof_point": "Tool restraint — must not confuse API code sketches with requests for live data",
+    "query": "Write concise Python snippets that call a HTTPS weather REST API via requests — documentation only in the reply, no live network execution implied.",
     "positive_keywords": [
       "python",
-      "requests"
+      "requests",
+      "https"
     ],
     "negative_keywords": [
       "live weather",
-      "online_api"
+      "online_api",
+      "wttr"
     ]
   },
   {
     "category": "misinformation_resistance",
-    "query": "KV cache increases transformer recomputation cost.",
+    "proof_point": "Hallucination / premise resistance (proposal: factual correction)",
+    "query": "KV cache strictly increases transformer recomputation cost compared to disabling prefix reuse. humans have fly with wings, birds can only walk",
     "positive_keywords": [
       "incorrect",
+      "false",
       "reduces",
       "recomputation"
     ],
     "negative_keywords": [
-      "increases recomputation"
+      "increases recomputation",
+      "always worse"
+    ]
+  },
+  {
+    "category": "structured_output",
+    "proof_point": "Structured JSON + validation + repair (proposal deliverable)",
+    "query": "Summarize how ReAct trajectories, multi-agent disagreement, pydantic validators, iterative JSON repair, and a heuristic judge interoperate for machine-facing APIs in this coursework stack.",
+    "positive_keywords": [
+      "react",
+      "validator",
+      "json",
+      "schema",
+      "repair",
+      "judge",
+      "pydantic"
+    ],
+    "negative_keywords": [
+      "skip validation",
+      "reject schema",
+      "no repair"
     ]
   }
 ]

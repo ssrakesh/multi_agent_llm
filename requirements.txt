@@ -4,3 +4,5 @@ faiss-cpu
 numpy
 requests
 tabulate
+pydantic>=2
+psutil
