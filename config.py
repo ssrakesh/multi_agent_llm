@@ -56,11 +56,17 @@ AGENT_MODELS = {
     ),
 
     # Stable JSON and structured output generation
+    # "structured": (
+    #     "models/Phi-4-mini-reasoning-GGUF/"
+    #     "Phi-4-mini-reasoning-Q4_K_M.gguf"
+    # ),
+    # use non‑reasoning model to avoid toomany replay in think block in reasoning phi4 model.
     "structured": (
-        "models/Phi-4-mini-reasoning-GGUF/"
-        "Phi-4-mini-reasoning-Q4_K_M.gguf"
+        "models/Phi-3-mini-4k-instruct-gguf/"
+        "Phi-3-mini-4k-instruct-q4.gguf"
     ),
 }
+MAX_CONTEXT_TOKENS = 8192
 
 MAX_NEW_TOKENS = 128
 
@@ -104,16 +110,19 @@ MAX_REPAIR_BAD_OUTPUT_CHARS = 1200
 
 MAX_STRUCTURED_REPAIR_TOKENS = 640
 
-MAX_JSON_REPAIR_ATTEMPTS = 2
+# giving more chances to recover from malformed JSON (e.g. due to LLM preambles, trailing commentary, or partial generation) before conceding failure and logging an error.
+MAX_JSON_REPAIR_ATTEMPTS = 4
 
 # Benchmark: SLM JSON + validator/repair runs for every dataset row unless
 # that row sets "structured_eval": false (lighter-faster checks).
 DEFAULT_STRUCTURED_LLM_EVAL = True
 
-
 REACT_PHASE1_PROMPT = """You are the {role} in a Thought->Action->Observation ReAct workflow.
-Analyze the QUESTION briefly, then reply with ONLY a single JSON object (no prose, no markdown fences):
-{{"thought":"<one sentence>","action":"<weather|rag|none>"}}
+Analyze the QUESTION briefly, then reply with ONLY a single JSON object (no prose, no markdown fences).
+
+Example:
+{{"thought": "The user asks for live weather data, so I need to call the weather tool.", "action": "weather"}}
+
 Rules:
 - "weather": user wants a live/current weather observation for deciding real-world behaviour (forecast, umbrella, today's conditions).
 - "rag": factual grounding from a knowledge corpus helps (topics like hallucinations, RAG, KV cache, quantization, transformer misconceptions).
@@ -139,6 +148,7 @@ STRUCTURED_JSON_PROMPT = """You output ONLY one JSON object for a downstream par
 
 Rules:
 - First non-whitespace character must be {{ and the last non-whitespace must be }} — nothing before or after.
+- The "answer" value must be a non‑empty string.
 - No markdown, no code fences/backticks, no "Final Answer" headers, no LaTeX or \\boxed{{}} or \\text{{}} anywhere.
 - The "answer" value must be a single UTF-8 string of plain explanatory prose — compress NATURAL_ANSWER into coherent text once (no repetitions).
 
@@ -164,6 +174,7 @@ REPAIR_JSON_PROMPT = """Rebuild EXACTLY one compact JSON object for this schema 
 
 Rules:
 - First character {{ last character }}. No preamble, fences, bullets, repetition, Final Answer fragments, \\boxed{{}}, or prose outside JSON.
+- Remove any prefix like ‘ANSWER:’ or ‘Final answer:’ and ensure the first character is {{.
 
 SOURCE OF TRUTH (do not hallucinate unrelated content):
 - Copy "query" VERBATIM from QUERY below (including punctuation).
@@ -208,9 +219,10 @@ Pick the better answer for the user question. Prefer factually grounded, specifi
 If one answer is a meta-instruction (e.g. "your answer should include…") and the other is substantive, pick the substantive one.
 If retrieval/tool context was used ({rag_note}), slightly prefer the answer that uses that evidence appropriately.
 
-Return ONLY one JSON object (no markdown fences, no commentary):
-{{"choice":"planner"}} or {{"choice":"executor"}}
+Return ONLY one JSON object (no markdown fences, no commentary), for example:
+{{"choice":"executor","reason":"The executor answer cites retrieved evidence more directly."}}
 Optional: {{"choice":"planner","reason":"one short phrase"}}
+Your entire response must start with {{ and end with }}.
 
 QUESTION:
 {query}

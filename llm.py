@@ -71,7 +71,7 @@ class LLM:
 
             self.llm = Llama(
                 model_path=model_path,
-                n_ctx=4096,
+                n_ctx=MAX_CONTEXT_TOKENS,
                 n_gpu_layers=35,
                 verbose=False,
             )

@@ -1,5 +1,7 @@
 import json
 
+import re
+
 from agents.validator import Validator
 
 from logger import (
@@ -17,6 +19,19 @@ from config import (
     REACT_PHASE2_PROMPT,
 )
 
+def _extract_city_from_query(query):
+    """Pull city name from query for dynamic weather tool parameterization."""
+    q = query.strip()
+    # Prefer explicit "weather in <City>" or "weather for <City>"
+    m = re.search(r"weather\s+(?:in|for)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)", q)
+    if m:
+        return m.group(1)
+    # Fallback: first word after "weather" that looks like a proper noun
+    m = re.search(r"weather\s+([A-Z][a-z]+)", q)
+    if m:
+        return m.group(1)
+    # Last resort default – keep old behaviour but log warning
+    return "Bengaluru"
 
 def _live_weather_intent(query):
 
@@ -230,26 +245,18 @@ def run_react_agent(
             action = "none"
 
     if action == "weather":
-
+        city = _extract_city_from_query(query)
         stage_log(
             "TOOL",
-            f"{role}: Action=weather — live API call.",
+            f"{role}: Action=weather — live API call for '{city}'.",
         )
-
-        obs = tools["weather"]("Bengaluru")
-
+        obs = tools["weather"](city)
         observations.append(obs)
-
         used_tool = True
-
         react_trace.append({"observation": obs})
-
         react_log(
             role,
-            (
-                f"{case_tag}Observation: weather payload "
-                f"(keys={list(obs)[:3]}...)"
-            ),
+            f"{case_tag}Observation: weather payload (city={city}, keys={list(obs)[:3]}...)",
         )
 
     elif action == "rag":

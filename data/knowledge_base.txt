@@ -1,9 +1,9 @@
-KV cache reduces autoregressive recomputation.
-Quantization reduces VRAM usage.
-RAG reduces hallucinations using retrieval grounding.
-Grounding improves factual correctness.
-Tool restraint avoids unnecessary API calls.
-Semantic search compares query embeddings against passages via cosine similarity.
+The Eiffel Tower is in Paris, France.
+Water boils at 100 degrees Celsius at sea level.
+The human heart beats about 100,000 times per day.
+Mount Everest is the tallest mountain above sea level.
+Photosynthesis converts carbon dioxide and water into glucose and oxygen.
+Tool restraint avoids unnecessary API calls.                # keep one line for the pipeline’s own concept
+Self‑consistency aggregates multiple sampled trajectories before choosing a consensus answer.
+Judge‑style routing favours answers that cite external or retrieved evidence where available.
 Validators enforce APIs only accept JSON payloads that match declared schemas.
-Self-consistency aggregates multiple sampled trajectories before choosing a consensus answer.
-Judge-style routing favors answers that cite external or retrieved evidence where available.

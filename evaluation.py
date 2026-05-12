@@ -638,6 +638,8 @@ def _pipeline_case_metrics_md(
     combined_rag,
     structured_flag,
     ll_bundle,
+    expected_tool=None,
+    expected_rag=None,
 ):
 
     baseline_net = pk_single[0]
@@ -729,6 +731,18 @@ def _pipeline_case_metrics_md(
         "(same as `_rubric_breakdown`)."
     )
 
+    exp_tool_str = str(expected_tool) if expected_tool is not None else "—"
+    exp_rag_str = str(expected_rag) if expected_rag is not None else "—"
+    expected_actual_line = (
+        "\nExpected (from dataset): used_tool={expected_tool}, used_rag={expected_rag}  "
+        "Actual (combined): used_tool={combined_tool}, used_rag={combined_rag}\n"
+    ).format(
+        expected_tool=exp_tool_str,
+        expected_rag=exp_rag_str,
+        combined_tool=combined_tool,
+        combined_rag=combined_rag,
+    )
+
     return (
         "### Layer metrics (this testcase)\n\n"
         f"{key_line}\n\n"
@@ -743,6 +757,7 @@ def _pipeline_case_metrics_md(
         f"| Planner | {planner_tool} | {planner_rag} |\n"
         f"| Executor | {exec_tool} | {exec_rag} |\n"
         f"| Combined (planner ∨ executor) | {combined_tool} | {combined_rag} |\n\n"
+        f"{expected_actual_line}\n"
         "#### Judge outcome (planner vs executor narratives)\n\n"
         f"{judge_label}\n\n"
         "#### Structured layer (SLM validation / repair)\n\n"
@@ -986,7 +1001,22 @@ class Evaluator:
                 full["executor_answer"],
                 full["answer"],
             )
+            tool_expect_hits = 0
+            tool_expect_total = 0
+            rag_expect_hits = 0
+            rag_expect_total = 0
+            expect_tool = task.get("expects_tool")
+            expect_rag  = task.get("expects_rag")
+            if expect_tool is not None:
+                tool_expect_total += 1
+                if full["used_tool"] == expect_tool:
+                    tool_expect_hits += 1
 
+            if expect_rag is not None:
+                rag_expect_total += 1
+                if full["used_rag"] == expect_rag:
+                    rag_expect_hits += 1
+                    
             layers_md = _pipeline_case_metrics_md(
                 pk_single=pk_single,
                 pk_planner=pk_planner,
@@ -1005,6 +1035,8 @@ class Evaluator:
                 combined_rag=full["used_rag"],
                 structured_flag=structured_flag,
                 ll_bundle=ll_bundle,
+                expected_tool=expect_tool,
+                expected_rag=expect_rag,
             )
 
             sum_single += s_score

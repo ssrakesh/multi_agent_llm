@@ -1,99 +1,49 @@
 [
   {
     "category": "reasoning_tradeoffs",
-    "proof_point": "Multi-step reasoning + resource trade-offs (proposal: reasoning effectiveness)",
-    "query": "On an 8GB GPU, should an operator prioritize int4 quantization for VRAM headroom or chase KV-cache style decode optimizations for latency? Name trade-offs another engineer should record (throughput vs tail variance vs memory residency) if two teams disagree.",
-    "positive_keywords": [
-      "quantization",
-      "vram",
-      "latency",
-      "throughput",
-      "trade",
-      "8gb"
-    ],
-    "negative_keywords": [
-      "single metric settles it",
-      "no trade-offs"
-    ]
+    "proof_point": "Multi‑step reasoning + resource trade‑offs (proposal: reasoning effectiveness)",
+    "query": "A chef has only one large pot and needs to boil pasta, then blanch broccoli, and finally steam fish – all in sequence. The pot takes 2 minutes to heat water to a boil, pasta cooks in 8 min, broccoli in 3 min, fish in 10 min. Should they cook pasta or broccoli first to minimise total time? Explain the trade‑offs, considering heat retention and cleaning time.",
+    "positive_keywords": ["trade", "time", "sequence", "heat", "minimise"],
+    "negative_keywords": ["no trade‑offs", "only one answer"],
+    "expects_tool": false,
+    "expects_rag": false
   },
   {
     "category": "rag_grounding",
     "proof_point": "RAG grounding (proposal: retrieval lowers hallucinations; when to retrieve)",
-    "query": "Explain how retrieval-augmented grounding reduces hallucination risk, then state when latency-budgeted agents should invoke retrieval versus answering from parametric memory alone.",
-    "positive_keywords": [
-      "retrieval",
-      "grounding",
-      "hallucination",
-      "latency",
-      "evidence",
-      "memory"
-    ],
-    "negative_keywords": [
-      "retrieval always harmful",
-      "ignore sources"
-    ]
+    "query": "A student asks: 'Does the Eiffel Tower stand in Berlin, and does water boil at 90°C everywhere?' Use retrieval to give the correct facts, then explain when a travel chatbot should retrieve facts instead of relying on its training memory.",
+    "positive_keywords": ["Paris", "100", "retrieval", "hallucination", "memory", "grounding"],
+    "negative_keywords": ["Berlin", "90°C", "ignore sources"],
+    "expects_tool": false,
+    "expects_rag": true
   },
   {
-    "category": "tool_calling",
-    "proof_point": "Appropriate live tool use (proposal: tool calling / API grounding)",
-    "query": "What is today's weather in Bengaluru and should I carry an umbrella?",
-    "positive_keywords": [
-      "weather",
-      "umbrella",
-      "online_api"
-    ],
-    "negative_keywords": [
-      "cannot access",
-      "offline only"
-    ]
+    "category": "tool_calling_and_restraint",
+    "proof_point": "Live tool use vs tool restraint (proposal: tool calling / API grounding)",
+    "query": "Two separate tasks: (1) What’s the current weather like in London, and should I take an umbrella? (2) Write a short Python function that calls a weather API via `requests` – show only the code; do not run it or fetch live data.",
+    "positive_keywords": ["weather", "umbrella", "online_api", "python", "requests", "function"],
+    "negative_keywords": ["cannot access", "offline only", "live weather for the Python code"],
+    "expects_tool": true,
+    "expects_rag": false
   },
   {
-    "category": "tool_restraint",
-    "proof_point": "Tool restraint — must not confuse API code sketches with requests for live data",
-    "query": "Write concise Python snippets that call a HTTPS weather REST API via requests — documentation only in the reply, no live network execution implied.",
-    "positive_keywords": [
-      "python",
-      "requests",
-      "https"
-    ],
-    "negative_keywords": [
-      "live weather",
-      "online_api",
-      "wttr"
-    ]
-  },
-  {
-    "category": "misinformation_resistance",
-    "proof_point": "Hallucination / premise resistance (proposal: factual correction)",
-    "query": "KV cache strictly increases transformer recomputation cost compared to disabling prefix reuse. humans have fly with wings, birds can only walk",
-    "positive_keywords": [
-      "incorrect",
-      "false",
-      "reduces",
-      "recomputation"
-    ],
-    "negative_keywords": [
-      "increases recomputation",
-      "always worse"
-    ]
+    "category": "misinformation_resistance_and_self_consistency",
+    "proof_point": "Hallucination resistance + self‑consistency judge (proposal: factual correction, judge selection)",
+    "query": "Someone claims: 'Mount Everest is in South America, and the human heart beats 10,000 times a day.' Identify the errors, correct them, and then explain why the judge agent chose the answer from one trajectory over the other in this pipeline.",
+    "positive_keywords": ["Himalayas", "Nepal", "100,000", "judge", "trajectory", "incorrect"],
+    "negative_keywords": ["South America", "10,000", "both correct", "everest is in south america",
+  "10,000 beats per day",
+  "both statements are true"],
+    "expects_tool": false,
+    "expects_rag": false
   },
   {
     "category": "structured_output",
     "proof_point": "Structured JSON + validation + repair (proposal deliverable)",
-    "query": "Summarize how ReAct trajectories, multi-agent disagreement, pydantic validators, iterative JSON repair, and a heuristic judge interoperate for machine-facing APIs in this coursework stack.",
-    "positive_keywords": [
-      "react",
-      "validator",
-      "json",
-      "schema",
-      "repair",
-      "judge",
-      "pydantic"
-    ],
-    "negative_keywords": [
-      "skip validation",
-      "reject schema",
-      "no repair"
-    ]
+    "query": "Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.",
+    "positive_keywords": ["photosynthesis", "react", "validator", "json", "schema", "repair", "judge"],
+    "negative_keywords": ["skip validation", "reject schema", "no repair"],
+    "expects_tool": false,
+    "expects_rag": false
   }
 ]
