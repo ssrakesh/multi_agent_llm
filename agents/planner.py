@@ -11,6 +11,8 @@ from logger import (
 )
 
 from config import (
+    MAX_REACT_JSON_TOKENS,
+    MAX_REACT_SYNTHESIS_TOKENS,
     REACT_PHASE1_PROMPT,
     REACT_PHASE2_PROMPT,
 )
@@ -169,7 +171,8 @@ def run_react_agent(
         REACT_PHASE1_PROMPT.format(
             role=role,
             query=query,
-        )
+        ),
+        max_tokens=MAX_REACT_JSON_TOKENS,
     )
 
     parsed = _parse_action_json(phase1)
@@ -284,8 +287,46 @@ def run_react_agent(
             base_prompt=prompt_template,
             query=query,
             observations=combined_obs,
-        )
+        ),
+        max_tokens=MAX_REACT_SYNTHESIS_TOKENS,
     )
+
+    response = str(response).strip()
+
+    if not response:
+
+        react_log(
+            role,
+            f"{case_tag}Synthesis empty — falling back to observation text.",
+        )
+
+        parts = []
+
+        for ob in observations:
+
+            if isinstance(ob, dict):
+
+                parts.append(
+                    json.dumps(
+                        ob,
+                        indent=2,
+                        ensure_ascii=False,
+                    ),
+                )
+
+            else:
+
+                parts.append(str(ob))
+
+        response = (
+            "\n\n".join(p for p in parts if str(p).strip())
+        )
+
+        if not response.strip():
+
+            response = (
+                f"[{role}] empty synthesis and no observations to quote."
+            )
 
     react_trace.append({"phase": "synthesis"})
 

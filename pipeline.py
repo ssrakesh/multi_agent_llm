@@ -9,8 +9,13 @@ from config import (
     EXECUTOR_PROMPT,
     MAX_BASELINE_NEW_TOKENS,
     MAX_JSON_REPAIR_ATTEMPTS,
+    MAX_STRUCTURED_LLM_TOKENS,
+    MAX_STRUCTURED_NATURAL_CHARS,
     PLANNER_PROMPT,
     STRUCTURED_JSON_PROMPT,
+    STRUCTURED_REPEAT_PENALTY,
+    STRUCTURED_TEMPERATURE,
+    USE_LLM_JUDGE,
 )
 
 from logger import (
@@ -50,6 +55,39 @@ def _preview_query(query, limit=140):
         return cleaned[: limit - 3] + "..."
 
     return cleaned
+
+
+def _flatten_observations_for_judge(
+    planner_observations,
+    executor_observations,
+):
+
+    parts = []
+
+    for seq in (
+        planner_observations or [],
+        executor_observations or [],
+    ):
+
+        for ob in seq:
+
+            if isinstance(
+                ob,
+                dict,
+            ):
+
+                parts.append(
+                    json.dumps(
+                        ob,
+                        ensure_ascii=False,
+                    ),
+                )
+
+            else:
+
+                parts.append(str(ob))
+
+    return "\n".join(parts)
 
 
 def _evaluation_case_label(meta, query):
@@ -105,7 +143,9 @@ def _llm_structure_pass(
 
     prompt = STRUCTURED_JSON_PROMPT.format(
         query=query,
-        natural_answer=str(natural_answer)[:8096],
+        natural_answer=(
+            str(natural_answer)[:MAX_STRUCTURED_NATURAL_CHARS]
+        ),
         used_tool=json.dumps(bool(used_tool)),
         used_rag=json.dumps(bool(used_rag)),
     )
@@ -115,7 +155,12 @@ def _llm_structure_pass(
         "repair_attempted": bool(apply_repairs),
     }
 
-    current = llm_local.generate(prompt)
+    current = llm_local.generate(
+        prompt,
+        max_tokens=MAX_STRUCTURED_LLM_TOKENS,
+        temperature=STRUCTURED_TEMPERATURE,
+        repeat_penalty=STRUCTURED_REPEAT_PENALTY,
+    )
 
     bundle["raw_first"] = current
 
@@ -159,7 +204,15 @@ def _llm_structure_pass(
 
     while repairs_used < attempts:
 
-        current = RepairAgent.repair(llm_local, current, fault)
+        current = RepairAgent.repair(
+            llm_local,
+            current,
+            fault,
+            query=query,
+            natural_answer=str(natural_answer),
+            used_tool=used_tool,
+            used_rag=used_rag,
+        )
 
         repairs_used += 1
 
@@ -350,8 +403,9 @@ class MultiAgentPipeline:
         pipeline_log(
             "JUDGE",
             (
-                "Rule-based judge prefers grounded snippets "
-                f"(enabled={use_self_consistency})."
+                "Selecting planner vs executor final answer "
+                f"(self-consistency={use_self_consistency}, "
+                f"USE_LLM_JUDGE={USE_LLM_JUDGE})."
             ),
         )
 
@@ -360,16 +414,6 @@ class MultiAgentPipeline:
             executor_result["answer"],
         ]
 
-        final_answer = judge_agent(
-            query,
-            traj,
-            enabled=use_self_consistency,
-        )
-
-        answer_no_judge = traj[0]
-
-        structured_stats = {}
-
         combined_tool = planner_result[
             "used_tool"
         ] or executor_result["used_tool"]
@@ -377,6 +421,46 @@ class MultiAgentPipeline:
         combined_rag = planner_result[
             "used_rag"
         ] or executor_result["used_rag"]
+
+        judge_hints = _flatten_observations_for_judge(
+            planner_result["observations"],
+            executor_result["observations"],
+        )
+
+        judge_model = None
+
+        try:
+
+            if (
+                use_self_consistency
+                and USE_LLM_JUDGE
+            ):
+
+                judge_model = LLM(
+                    AGENT_MODELS[
+                        "judge"
+                    ],
+                )
+
+            final_answer = judge_agent(
+                query,
+                traj,
+                enabled=use_self_consistency,
+                observation_hints=judge_hints,
+                combined_rag=combined_rag,
+                combined_tool=combined_tool,
+                llm=judge_model,
+            )
+
+        finally:
+
+            if judge_model is not None:
+
+                judge_model.unload()
+
+        answer_no_judge = traj[0]
+
+        structured_stats = {}
 
         base_pack, canonical_json_dump = (
             _programmatic_package(

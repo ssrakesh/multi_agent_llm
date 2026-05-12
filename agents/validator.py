@@ -1,4 +1,5 @@
 import json
+import re
 
 from pydantic import ValidationError
 
@@ -12,11 +13,26 @@ class Validator:
     @staticmethod
     def extract_json_object(text):
 
-        start = text.find("{")
+        if not isinstance(text, str):
 
-        if start < 0:
+            text = str(text)
 
-            return None
+        anchored = re.search(
+            r"\{\s*\"query\"\s*:",
+            text,
+        )
+
+        if anchored:
+
+            start = anchored.start()
+
+        else:
+
+            start = text.find("{")
+
+            if start < 0:
+
+                return None
 
         depth = 0
 

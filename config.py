@@ -10,6 +10,13 @@ REPORTS_DIR = _ROOT / "reports"
 EVALUATION_REPORT_PATH = REPORTS_DIR / "evaluation_report.md"
 
 
+# Report fidelity: ``None`` = never truncate narratives, RAG text, telemetry JSON,
+# or ReAct traces (markdown files may become very large).
+EVAL_REPORT_BODY_CHAR_CAP = None
+
+EVAL_REPORT_REACT_TRACE_LINES = None
+
+
 STATES_DIR = _ROOT / "states"
 
 
@@ -57,6 +64,16 @@ AGENT_MODELS = {
 
 MAX_NEW_TOKENS = 128
 
+# ReAct phase-1 is a single JSON blob; phase-2 must answer substantively — the same
+# 128-token cap as chat caused placeholder answers ("ANSWER: RESPONSE") and empty
+# executor completions while single-pass baseline used BASELINE_PROMPT + 512 tokens.
+MAX_REACT_JSON_TOKENS = 320
+
+MAX_REACT_SYNTHESIS_TOKENS = 896
+
+# Structured conformance + repair (JSON object + possible reasoning preamble).
+MAX_STRUCTURED_LLM_TOKENS = 1152
+
 # Single-pass baseline: raw `query` alone often yields **empty** completions from
 # instruction/reasoning GGUFs via llama.cpp; wrap + allow more budget than agents.
 BASELINE_PROMPT_TEMPLATE = """You are a helpful assistant answering an evaluation question.
@@ -74,6 +91,18 @@ MAX_BASELINE_NEW_TOKENS = 512
 TEMPERATURE = 0.3
 
 TOP_P = 0.9
+
+STRUCTURED_TEMPERATURE = 0.12
+
+STRUCTURED_REPEAT_PENALTY = 1.15
+
+MAX_STRUCTURED_NATURAL_CHARS = 8096
+
+MAX_REPAIR_SOURCE_NATURAL_CHARS = 6000
+
+MAX_REPAIR_BAD_OUTPUT_CHARS = 1200
+
+MAX_STRUCTURED_REPAIR_TOKENS = 640
 
 MAX_JSON_REPAIR_ATTEMPTS = 2
 
@@ -103,13 +132,43 @@ QUESTION:
 OBSERVATIONS (may be empty):
 {observations}
 
-Write a concise final answer for the user.
+Write a concise final answer for the user. Prefer reusing factual phrases from the question and OBSERVATIONS (exact wording when helpful).
 """
 
-STRUCTURED_JSON_PROMPT = """You output ONLY valid JSON for a downstream API. No markdown, no commentary.
-Required keys with exact typing: query (string), answer (string), used_tool (boolean), used_rag (boolean).
+STRUCTURED_JSON_PROMPT = """You output ONLY one JSON object for a downstream parser. Breaking these rules corrupts downstream systems:
 
-Copy QUERY verbatim into the "query" field. Place the natural answer in "answer".
+Rules:
+- First non-whitespace character must be {{ and the last non-whitespace must be }} — nothing before or after.
+- No markdown, no code fences/backticks, no "Final Answer" headers, no LaTeX or \\boxed{{}} or \\text{{}} anywhere.
+- The "answer" value must be a single UTF-8 string of plain explanatory prose — compress NATURAL_ANSWER into coherent text once (no repetitions).
+
+Required keys and types exactly: "query" (string), "answer" (string), "used_tool" (boolean), "used_rag" (boolean).
+Use DOUBLE quotes for all JSON keys and string values only.
+
+Example shape (substitute values):
+{{"query":"...","answer":"...","used_tool":false,"used_rag":false}}
+
+QUERY (copy verbatim into "query"):
+{query}
+
+NATURAL_ANSWER (transcribe once into plain "answer"):
+{natural_answer}
+
+FLAGS ("used_tool"/"used_rag" booleans MUST match exactly):
+used_tool={used_tool}
+used_rag={used_rag}
+"""
+
+REPAIR_JSON_PROMPT = """Rebuild EXACTLY one compact JSON object for this schema fields:
+{{"query": string, "answer": string, "used_tool": boolean, "used_rag": boolean}}
+
+Rules:
+- First character {{ last character }}. No preamble, fences, bullets, repetition, Final Answer fragments, \\boxed{{}}, or prose outside JSON.
+
+SOURCE OF TRUTH (do not hallucinate unrelated content):
+- Copy "query" VERBATIM from QUERY below (including punctuation).
+- Set "answer" to a single SHORT plain-text synopsis of NATURAL_ANSWER (strip markup/LaTeX/fences/novelty tokens; NEVER repeat paragraphs).
+- Set booleans exactly as FLAGS states.
 
 QUERY:
 {query}
@@ -117,21 +176,15 @@ QUERY:
 NATURAL_ANSWER:
 {natural_answer}
 
-FLAGS (must match booleans):
+FLAGS:
 used_tool={used_tool}
 used_rag={used_rag}
-"""
-
-REPAIR_JSON_PROMPT = """The prior output was invalid JSON for the schema
-{{query:str,answer:str,used_tool:bool,used_rag:bool}}.
 
 ERROR:
 {error}
 
 BAD OUTPUT:
 {bad_output}
-
-Respond with ONLY a corrected JSON object, no fences.
 """
 
 PLANNER_PROMPT = """
@@ -143,7 +196,36 @@ You are a factual executor agent.
 Prioritize external evidence and grounded reasoning.
 """
 
+USE_LLM_JUDGE = True
+
+MAX_JUDGE_NEW_TOKENS = 320
+
+JUDGE_TEMPERATURE = 0.15
+
+JUDGE_LLM_PROMPT = """{base_judge}
+
+Pick the better answer for the user question. Prefer factually grounded, specific, non-refusal text.
+If one answer is a meta-instruction (e.g. "your answer should include…") and the other is substantive, pick the substantive one.
+If retrieval/tool context was used ({rag_note}), slightly prefer the answer that uses that evidence appropriately.
+
+Return ONLY one JSON object (no markdown fences, no commentary):
+{{"choice":"planner"}} or {{"choice":"executor"}}
+Optional: {{"choice":"planner","reason":"one short phrase"}}
+
+QUESTION:
+{query}
+
+OBSERVATION / TOOL HINTS (may be empty):
+{hints}
+
+ANSWER_PLANNER (trajectory 1):
+{planner}
+
+ANSWER_EXECUTOR (trajectory 2):
+{executor}
+"""
+
 JUDGE_PROMPT = """
-You are a judge agent.
-Prefer grounded and tool-supported answers.
+You are a judge agent comparing two candidate answers to the same user question.
+Be concise and decisive; output only the requested JSON decision object.
 """

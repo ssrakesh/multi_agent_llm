@@ -16,20 +16,256 @@ Operational setup matches a **student / lab** setting: local **GGUF** models via
 
 ---
 
-## Architectural snapshot
+## Architecture (PlantUML)
 
-```
-User Query
-   ├► Single-pass baseline SLM ─────────────────────────► keyword score #1
-   └► Planner ReAct (+ optional observations)
-           ├► Executor ReAct (+ optional observations)
-                  ├► Judge (preferred grounded/tool evidence)
-                  ├► Programmatic pydantic-safe JSON scaffold
-                  └► Structured LLM pass + Validator + Repair (default; row can opt out)
- benchmark driver collects metrics ───► Markdown report (`reports/evaluation_report.md`)
+
+
+### Components and dependencies
+
+Static view of modules and external resources.
+
+```plantuml
+@startuml MultiAgentSLM_Components
+!theme plain
+skinparam rectangle {
+  roundCorner 10
+}
+skinparam linetype ortho
+
+together {
+  rectangle "Entry" as ENTRY {
+    [main.py] as MAIN
+  }
+  rectangle "Orchestration" as ORCH {
+    [evaluation.py\nEvaluator] as EVAL
+    [pipeline.py\nMultiAgentPipeline] as PIPE
+  }
+}
+
+rectangle "LLM gateway" as LLM {
+  [llm.py\nLlama GGUF loader] as LWG
+}
+
+package "agents" {
+  together {
+    rectangle "ReAct" as RA {
+      [planner.run_react_agent] as PLN
+      [agents/judge\njudge_agent] as JDG
+    }
+    rectangle "Structured output" as SO {
+      [Validator\n+json extract] as VAL
+      [RepairAgent] as REP
+    }
+  }
+}
+
+together {
+  rectangle "Grounding & tools" as GT {
+    [tools.py\nweather, kb, python] as TUL
+    [rag.py\nembeddings + Faiss] as RAG
+    [data/knowledge_base.txt] as KB
+  }
+}
+
+rectangle "Contract" as SCH {
+  [schema.py\nOutputSchema] as OSC
+}
+
+rectangle "Artifacts" as OUT {
+  [reports/\nevaluation_report.md] as RPT
+  [inputs.json] as INP
+}
+
+MAIN --> EVAL : inputs.json
+MAIN --> PIPE : constructs
+EVAL --> PIPE : run_single_agent\nrun_multi_agent
+EVAL --> INP : load dataset
+
+PIPE --> PLN : planner ReAct
+PIPE --> PLN : executor ReAct
+PIPE --> JDG : traj[0], traj[1]
+PIPE --> LWG : model loads\nper stage
+
+PLN --> LWG : phase-1 JSON\nphase-2 synthesis
+PLN --> TUL : action=weather
+PLN --> RAG : action=rag
+RAG --> KB : index lines
+
+PIPE --> OSC : pydantic scaffold
+PIPE --> LWG : structured SLM pass
+PIPE --> VAL : validate completions
+REP --> LWG : repair generation
+REP --> VAL : re-check
+
+EVAL --> PIPE : benchmarks
+EVAL --> RPT : write markdown\n+ tables
+
+VAL --> OSC : model_validate
+
+note right of PLN
+  Phase-1: {thought, action}
+  weather|rag|none
+  Phase-2: synthesis
+  + observations[]
+end note
+
+@enduml
 ```
 
-Each ReAct iteration logs explicit phases:
+### End-to-end benchmark flow
+
+One row from `inputs.json`: **sequential** baseline, then multi-agent path (planner → executor → judge → structured pass), then scoring and report lines. Matches `evaluation.py` + `pipeline.py`.
+
+```plantuml
+@startuml MultiAgentSLM_BenchmarkFlow
+!theme plain
+skinparam activity {
+  BackgroundColor #FEFEFE
+  DiamondBackgroundColor #E8F4FC
+}
+
+start
+
+partition "evaluation.Evaluator — one dataset row" {
+
+  :Resolve category, query,\npositive_keywords, negative_keywords,\nstructured_eval flag;
+
+  partition "pipeline.run_single_agent" as SP {
+    :Load LLM (planner model id);
+    :BASELINE_PROMPT_TEMPLATE + generate;
+    :Unload; baseline answer + latency;
+  }
+
+  partition "pipeline.run_multi_agent" as MA {
+
+    partition "Planner — agents.planner.run_react_agent" {
+      :Load planner LLM;
+      :Phase-1: ReAct JSON\n{thought, action};
+      if (JSON action parse succeeds?) then (yes)
+      else (no)
+        :Heuristic routing\n(category + intent);
+      endif
+      if (action == weather?) then (y)
+        :tools.weather();\nobservations += dict;
+      elseif (action == rag?) then (y)
+        :rag.retrieve();\nobservations += text;
+      else (none)
+        :No tool / RAG side-effect;
+      endif
+      :Phase-2 synthesis (uses observations);
+      :Unload planner LLM;
+    }
+
+    partition "Executor — same scaffold" {
+      :Load executor LLM;
+      :Phase-1 + branch + Phase-2\n(independent trajectory);
+      :Unload executor LLM;
+    }
+
+    :Judge: pick final answer\nfrom planner vs executor lists;
+    :Programmatic OutputSchema\n(package from final + flags);
+
+    if (Structured SLM evaluation for this row?) then (yes)
+      :Load structured LLM;
+      :Emit JSON from\nSTRUCTURED_JSON_PROMPT;
+      :Validator.extract_json_object\n+ OutputSchema check;
+      if (valid first pass?) then (no)
+        partition "Repair loop" {
+          :RepairAgent (contextual)\n+ re-validate;
+          note right
+            Up to MAX_JSON_REPAIR_ATTEMPTS
+            (see config.py)
+          end note
+        }
+      endif
+      :Unload structured LLM;
+    else (skip)
+      :Structured bundle marked skipped;
+    endif
+
+    :Multi-agent latency;
+  }
+
+  :Keyword rubric on baseline / planner /\nexecutor / final answers;
+  :Append detailed section to\nin-memory report buffer;
+}
+
+partition "After all rows" {
+  :Tabulate aggregates\n(tool / RAG / JSON / means);
+  :Write reports/evaluation_report.md;
+}
+
+stop
+
+floating note right
+ReAct phases log as [REACT::*].\nTool/RAG as [TOOL]/[RAG].\nStructured as [VALIDATE]/[PIPELINE::REPAIR].
+end note
+
+@enduml
+```
+
+### Multi-agent message flow (sequence sketch)
+
+```plantuml
+@startuml MultiAgentSLM_Sequence
+!theme plain
+
+actor Driver as D
+participant "Evaluator" as E
+participant "MultiAgentPipeline" as P
+participant "Planner LLM" as PL
+participant "Tools/RAG" as X
+participant "Executor LLM" as EX
+participant "Judge" as J
+participant "Structured LLM" as S
+participant "Validator" as V
+
+D -> E : evaluate(inputs.json)
+activate E
+E -> P : run_multi_agent(query, ...)
+activate P
+P -> PL : run_react_agent (planner)
+activate PL
+PL -> PL : phase-1 generate
+PL -> X : weather or retrieve (optional)
+X --> PL : observation
+PL -> PL : phase-2 generate
+PL --> P : planner_answer, trace, flags
+deactivate PL
+P -> EX : run_react_agent (executor)
+activate EX
+EX -> EX : phase-1 generate
+EX -> X : weather or retrieve (optional)
+X --> EX : observation
+EX -> EX : phase-2 generate
+EX --> P : executor_answer, trace, flags
+deactivate EX
+P -> J : judge_agent(query, [A1, A2])
+activate J
+J --> P : final_answer
+deactivate J
+P -> P : programmatic OutputSchema JSON
+P -> S : structured pass (if enabled)
+activate S
+S --> P : raw JSON text
+deactivate S
+P -> V : validate(...)
+activate V
+V --> P : parsed or error string
+deactivate V
+P --> E : full telemetry dict
+deactivate P
+E --> D : report path
+deactivate E
+
+@enduml
+```
+
+The diagram shows **one `run_multi_agent`** call; the evaluator still runs **`run_single_agent` first** each row (baseline), then this path, then rubric + appendix materialization.
+
+### ReAct detail (within each agent turn)
+
+Each ReAct trajectory logs explicit phases:
 
 1. **Phase‑1 SLM JSON** deciding among `{weather,rag,none}` (keyword fallbacks preserved for robustness).
 2. Deterministic branching + observation capture (`[TOOL]` / `[RAG]`).

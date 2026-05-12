@@ -98,6 +98,11 @@ def eval_log(msg):
     _emit(f"[EVAL] {msg}")
 
 
+def rubric_log(msg):
+
+    _emit(f"[RUBRIC] {msg}")
+
+
 def pipeline_log(stage, msg):
 
     _emit(f"[PIPELINE::{stage}] {msg}")
