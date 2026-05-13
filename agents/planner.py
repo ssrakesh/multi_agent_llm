@@ -222,7 +222,9 @@ def run_react_agent(
             action = "none"
 
     if action == "weather":
-        city = parsed.get("city") if parsed and parsed.get("city") else _extract_city_from_query(query)
+         # city was already extracted from parsed; use it if available, else fallback
+        if not city:
+            city = _extract_city_from_query(query)
         stage_log("TOOL", f"{role}: Action=weather — live API call for '{city}'.")
         obs = tools["weather"](city)
         observations.append(obs)

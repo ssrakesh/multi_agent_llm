@@ -1,13 +1,13 @@
 # Multi‑Agent LLM System – Evaluation Report
 ## Executive Summary
 
-- **Task accuracy** (keyword rubric): single‑pass mean **49.1%** → multi‑agent final mean **49.1%** (Δ **+0.0 pp**).
-- **Planner‑only mean:** 49.1% (no judge).
+- **Task accuracy** (keyword rubric): single‑pass mean **49.1%** → multi‑agent final mean **48.7%** (Δ **-0.5 pp**).
+- **Planner‑only mean:** 45.8% (no judge).
 - **Tool adherence:** 5/5 rows matched expectation (100.0%).
-- **RAG engagement:** 3/5 rows matched expectation (60.0%).
-- **Structured JSON first‑attempt validity:** 60.0%; after repair: 60.0%.
-- **Mean repair iterations:** 1.60.
-- **Memory (RSS):** start 460.66 MB, end 508.89 MB (Δ 48.23 MB).
+- **RAG engagement:** 4/5 rows matched expectation (80.0%).
+- **Structured JSON first‑attempt validity:** 100.0%; after repair: 100.0%.
+- **Mean repair iterations:** 0.00.
+- **Memory (RSS):** start 460.99 MB, end 511.66 MB (Δ 50.67 MB).
 
 ## 1. Proposal Claims & Evidence Map
 
@@ -26,34 +26,34 @@
 | Metric | Result |
 |---|---|
 | Mean Net % — single-pass | 49.1% |
-| Mean Net % — post-judge final | 49.1% |
-| Mean Net % — planner trajectory only | 49.1% |
+| Mean Net % — post-judge final | 48.7% |
+| Mean Net % — planner trajectory only | 45.8% |
 | Tool expectation match | 5/5 (100.0%) |
-| RAG expectation match | 3/5 (60.0%) |
-| JSON valid — first structured sample | 60.0% |
-| JSON valid — after repairs | 60.0% |
-| Mean repair iterations | 1.60 |
-| RSS (MB) start / end | 460.66/508.89 |
+| RAG expectation match | 4/5 (80.0%) |
+| JSON valid — first structured sample | 100.0% |
+| JSON valid — after repairs | 100.0% |
+| Mean repair iterations | 0.00 |
+| RSS (MB) start / end | 460.99/511.66 |
 
 ### Single‑pass baseline table
 
 | category                                       | net_%   | latency_s   |
 |------------------------------------------------|---------|-------------|
-| reasoning_tradeoffs                            | 60.0%   | 14.87s      |
-| rag_grounding                                  | 0%      | 50.89s      |
-| tool_calling_and_restraint                     | 83.3%   | 11.73s      |
-| misinformation_resistance_and_self_consistency | 16.7%   | 51.74s      |
-| structured_output                              | 85.7%   | 52.79s      |
+| reasoning_tradeoffs                            | 60.0%   | 15.85s      |
+| rag_grounding                                  | 0%      | 53.94s      |
+| tool_calling_and_restraint                     | 83.3%   | 12.68s      |
+| misinformation_resistance_and_self_consistency | 16.7%   | 53.71s      |
+| structured_output                              | 85.7%   | 52.78s      |
 
 ### Multi‑agent per‑row scores
 
 | category                                       | planner_%   | executor_%   | final_%   | latency_s   | tool?   | rag?   |
 |------------------------------------------------|-------------|--------------|-----------|-------------|---------|--------|
-| reasoning_tradeoffs                            | 60.0%       | 100.0%       | 60.0%     | 270.30s     | False   | False  |
-| rag_grounding                                  | 0%          | 33.3%        | 0%        | 274.95s     | False   | True   |
-| tool_calling_and_restraint                     | 83.3%       | 16.7%        | 83.3%     | 354.47s     | True    | False  |
-| misinformation_resistance_and_self_consistency | 16.7%       | 33.3%        | 16.7%     | 87.77s      | False   | True   |
-| structured_output                              | 85.7%       | 85.7%        | 85.7%     | 397.80s     | False   | True   |
+| reasoning_tradeoffs                            | 60.0%       | 100.0%       | 60.0%     | 292.56s     | False   | False  |
+| rag_grounding                                  | 0%          | 33.3%        | 0%        | 257.98s     | False   | True   |
+| tool_calling_and_restraint                     | 66.7%       | 83.3%        | 66.7%     | 184.95s     | True    | False  |
+| misinformation_resistance_and_self_consistency | 16.7%       | 33.3%        | 16.7%     | 98.67s      | False   | True   |
+| structured_output                              | 85.7%       | 100.0%       | 100.0%    | 148.39s     | False   | False  |
 
 ## 3. Evidence for Each Proposal Claim
 
@@ -115,7 +115,7 @@ Final narrative equals **planner** trajectory (fallback or grounding keywords).
 
 #### Latency (wall-clock in driver)
 
-Single-pass **14.87s**; multi-agent end-to-end **270.30s**.
+Single-pass **15.85s**; multi-agent end-to-end **292.56s**.
 
 **What this proves:** Both agents performed multi‑step trade‑off reasoning without calling any tool. The planner scored 100% and the executor 100% (rubric). The judge selected the planner’s concise answer. This proves that the ReAct loop correctly identifies when no external resource is needed and still produces high‑quality reasoning.
 
@@ -232,7 +232,7 @@ ANSWER: Boil pasta first. Boiling pasta first allows the use of the same boiling
 ```
 [
   {
-    "thought": "The user is asking for an optimization problem involving sequential cooking tasks in a single pot. This requires logical deduction and comparison of scenarios (Pasta first vs. Broccoli first) while considering physical constraints (heat retention, cleaning). No external tool is needed.",
+    "thought": "The user is asking for an optimization problem involving sequential cooking tasks in a single pot. This requires analyzing the time taken for different sequences (Pasta first vs. Broccoli first) while considering physical constraints like heat retention and cleaning time. This is a complex reasoning/simulation task, not a factual lookup or live data retrieval.",
     "action": "none",
     "source": "llm_phase1_json"
   },
@@ -304,7 +304,7 @@ Final narrative equals **planner** trajectory (fallback or grounding keywords).
 
 #### Latency (wall-clock in driver)
 
-Single-pass **50.89s**; multi-agent end-to-end **274.95s**.
+Single-pass **53.94s**; multi-agent end-to-end **257.98s**.
 
 **What this proves:** Both agents invoked RAG and grounded the factual answer in retrieved knowledge (Eiffel Tower → Paris, water boils at 100 °C). The executor’s shorter answer avoided negative‑keyword penalties, earning a higher score. The LLM judge  selected the executor trajectory. This demonstrates that retrieval reduces hallucination risk and that the judge prefers externally‑sourced answers.
 
@@ -404,7 +404,7 @@ FINAL_ANSWER: The Eiffel Tower is not located in Berlin; it is located in Paris,
 ```
 [
   {
-    "thought": "The Eiffel Tower is not in Berlin; it's in Paris. Water boils at 100°C at sea level, not 90°C everywhere. These are factual questions that can be answered with retrieval from a knowledge base.",
+    "thought": "The question contains two factual queries, one about the location of the Eiffel Tower and another about the boiling point of water. Both can be answered with retrieval tools.",
     "action": "rag",
     "source": "llm_phase1_json"
   },
@@ -421,7 +421,7 @@ FINAL_ANSWER: The Eiffel Tower is not located in Berlin; it is located in Paris,
 ```
 [
   {
-    "thought": "The user asks two factual questions (Eiffel Tower location, boiling point of water) and then asks for methodological advice on when a chatbot should use retrieval vs. memory. The first two parts require factual grounding, making 'rag' the appropriate tool. The third part is conceptual and can be answered after retrieval.",
+    "thought": "The user asks two factual questions (Eiffel Tower location, boiling point of water) and asks for an explanation regarding chatbot design (when to use retrieval vs. memory). The first two parts require factual grounding, making 'rag' appropriate. The third part is conceptual, but since it builds on factual retrieval, 'rag' is the best overall choice.",
     "action": "rag",
     "source": "llm_phase1_json"
   },
@@ -447,8 +447,8 @@ FINAL_ANSWER: The Eiffel Tower is not located in Berlin; it is located in Paris,
 **Tool/RAG adherence:** Expected tool=`True` rag=`False` → Actual tool=`True` ✅ rag=`False` ✅
 
 **ReAct decisions:**
-- Planner: `weather` → weather (Bengaluru, bengaluru: 🌤️  +29°C)
-- Executor: `weather` → weather (Bengaluru, bengaluru: 🌤️  +29°C)
+- Planner: `weather` → weather (London, london: 🌧️  +9°C)
+- Executor: `weather` → weather (London, london: 🌧️  +9°C)
 
 **Judge outcome:** Final narrative equals **planner** trajectory (fallback or grounding keywords).
 
@@ -457,9 +457,9 @@ FINAL_ANSWER: The Eiffel Tower is not located in Berlin; it is located in Paris,
 | Artifact | Net % | Δ vs single | +hits/N₊ | +weight | −hits/N₋ | −penalty | Answer chars |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | Single-pass baseline | 83.3% | — | 5/6 | 83.33% | 0/3 | 0.0% | 348 |
-| Planner (pre-judge) | 83.3% | +0.0 | 5/6 | 83.33% | 0/3 | 0.0% | 617 |
-| Executor | 16.7% | -66.6 | 1/6 | 16.67% | 0/3 | 0.0% | 91 |
-| Post-judge final | 83.3% | +0.0 | 5/6 | 83.33% | 0/3 | 0.0% | 617 |
+| Planner (pre-judge) | 66.7% | -16.6 | 4/6 | 66.67% | 0/3 | 0.0% | 507 |
+| Executor | 83.3% | +0.0 | 5/6 | 83.33% | 0/3 | 0.0% | 1050 |
+| Post-judge final | 66.7% | -16.6 | 4/6 | 66.67% | 0/3 | 0.0% | 507 |
 
 `+weight` divides +hits by **6** (dataset positives). `−penalty` uses divisor **max(1, N₋)** = **3** for this row. **Net** = `max(0, round(+weight − −penalty, 1))`.
 
@@ -479,14 +479,22 @@ Final narrative equals **planner** trajectory (fallback or grounding keywords).
 
 #### Structured layer (SLM validation / repair)
 
-- First-sample schema-valid: **no**.
-- After validator + repair loop: **no**.
-- Repair iterations recorded: **4**.
-- Outcome: **still failing** schema after repairs.
+- First-sample schema-valid: **yes**.
+- After validator + repair loop: **yes**.
+- Repair iterations recorded: **0**.
+**Emitted record (validated when schema-ok):**
+```json
+{
+  "query": "What's the current weather like in London, and should I take an umbrella? Write a short Python function that calls a weather API via `requests` – show only the code; do not run it or fetch live data.",
+  "answer": "The current weather is cloudy with +9°C. Take an umbrella?",
+  "used_tool": true,
+  "used_rag": false
+}
+```
 
 #### Latency (wall-clock in driver)
 
-Single-pass **11.73s**; multi-agent end-to-end **354.47s**.
+Single-pass **12.68s**; multi-agent end-to-end **184.95s**.
 
 **What this proves:** The weather tool was called for the live‑data part, and the Python code snippet was provided without execution – exactly the restraint requested. The executor correctly noted the tool returned data for Bengaluru instead of London (hard‑coded city issue). Tool‑use expectation matched. This confirms the system can selectively invoke tools while respecting ‘no‑execution’ constraints.
 
@@ -510,53 +518,86 @@ def get_weather(api_key, city):
 
 **Planner answer:**
 ````
-A:The current weather in Bengaluru, India, is 29°C with no indication of rain, so you likely don't need an umbrella. For the Python function to call a weather API, you can use the following code snippet:
+A:The current weather in London is cloudy with a temperature of +9°C, so yes, you should take an umbrella.
 
 ```python
 import requests
 
 def get_weather(city):
-    api_key = 'your_api_key_here'
-    base_url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}'
-    response = requests.get(base_url)
-    return response.json()
+    api_key = "your_api_key"
+    base_url = "http://api.weatherapi.com/v1/current.json"
+    complete_url = f"{base_url}?key={api_key}&q={city}"
+    response = requests.get(complete_url)
+    weather_data = response.json()
+    return weather_data['current']['condition']['text']
 
 # Example usage:
-# weather_data = get_weather('Bengaluru')
-# print(weather_data)
+# weather = get_weather("London")
+# print(weather)
 ```
-Remember to replace 'your_api_key_here' with your actual API key from OpenWeatherMap. A
 ````
 
 
 **Executor answer:**
+````
+The final answer must address both parts of the question.
+
+***
+
+### Plan:
+1. Address the weather question using the provided observation.
+2. Address the Python coding request by providing the required code snippet.
+
+***
+
+### Final Answer Construction:
+(1) Weather: Use the observation data.
+(2) Code: Write the placeholder Python function.
+
+***
+*(Self-Correction/Refinement during drafting: Ensure the code block is clean and only contains the code, as requested.)*
+
+***
+
+**Final Answer:**
+(1) The current weather in London is 🌧️ +9°C, so yes, you should take an umbrella.
+(2) Here is the short Python function that calls a weather API via `requests`:
+
+```python
+import requests
+
+def get_weather(city, api_key):
+    """Calls a weather API and returns the forecast."""
+    url = f"https://api.weatherapi.com/v1/current.json?key={api_key}&q={city}"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        return {"error": str(e)}
 ```
-{
-  "source": "online_api",
-  "city": "Bengaluru",
-  "response": "bengaluru: 🌤️  +29°C\n"
-}
-```
+````
 
 
 **Final (judge) answer:**
 ````
-A:The current weather in Bengaluru, India, is 29°C with no indication of rain, so you likely don't need an umbrella. For the Python function to call a weather API, you can use the following code snippet:
+A:The current weather in London is cloudy with a temperature of +9°C, so yes, you should take an umbrella.
 
 ```python
 import requests
 
 def get_weather(city):
-    api_key = 'your_api_key_here'
-    base_url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}'
-    response = requests.get(base_url)
-    return response.json()
+    api_key = "your_api_key"
+    base_url = "http://api.weatherapi.com/v1/current.json"
+    complete_url = f"{base_url}?key={api_key}&q={city}"
+    response = requests.get(complete_url)
+    weather_data = response.json()
+    return weather_data['current']['condition']['text']
 
 # Example usage:
-# weather_data = get_weather('Bengaluru')
-# print(weather_data)
+# weather = get_weather("London")
+# print(weather)
 ```
-Remember to replace 'your_api_key_here' with your actual API key from OpenWeatherMap. A
 ````
 
 
@@ -564,15 +605,15 @@ Remember to replace 'your_api_key_here' with your actual API key from OpenWeathe
 ```
 [
   {
-    "thought": "Heuristic: live weather intent detected.",
+    "thought": "The user is asking for two things: current weather conditions in London to decide on an umbrella, and a Python code snippet for a weather API call.",
     "action": "weather",
-    "source": "heuristic_fallback"
+    "source": "llm_phase1_json"
   },
   {
     "observation": {
       "source": "online_api",
-      "city": "Bengaluru",
-      "response": "bengaluru: 🌤️  +29°C\n"
+      "city": "London",
+      "response": "london: 🌧️  +9°C\n"
     }
   },
   {
@@ -585,15 +626,15 @@ Remember to replace 'your_api_key_here' with your actual API key from OpenWeathe
 ```
 [
   {
-    "thought": "The user has two distinct requests. The first requires current, real-world weather information for London, necessitating the 'weather' tool. The second is a pure coding task (writing a Python function using `requests`) that does not require external data fetching, thus needing 'none' for the tool call.",
+    "thought": "The user has two distinct requests. The first requires current, real-world weather information for London, necessitating the 'weather' tool. The second is a pure coding task (writing a Python function) that does not require external tools or live data, thus requiring 'none' for that part of the thought process, but since the output must be a single JSON object representing the *next* action, I must prioritize the actionable, external request, which is the weather check. I will address the weather first.",
     "action": "weather",
     "source": "llm_phase1_json"
   },
   {
     "observation": {
       "source": "online_api",
-      "city": "Bengaluru",
-      "response": "bengaluru: 🌤️  +29°C\n"
+      "city": "London",
+      "response": "london: 🌧️  +9°C\n"
     }
   },
   {
@@ -662,7 +703,7 @@ Final narrative equals **planner** trajectory (fallback or grounding keywords).
 
 #### Latency (wall-clock in driver)
 
-Single-pass **51.74s**; multi-agent end-to-end **87.77s**.
+Single-pass **53.71s**; multi-agent end-to-end **98.67s**.
 
 **What this proves:** The executor retrieved external facts to correct the false claims (Everest in Asia, 100k heartbeats/day). The planner produced only a vague statement. The judge (heuristic, as LLM judge was unavailable) favoured the executor, showing that retrieval‑backed answers win. Rubric penalised the correction text for quoting the false claims – a known limitation we discuss in the failure analysis.
 
@@ -735,7 +776,7 @@ FINAL ANSWER: The errors are: Mount Everest is not in South America; it is in As
 ```
 [
   {
-    "thought": "The user asks to identify errors in two factual claims (location of Everest, heart rate) and then explain a meta-concept about a 'judge agent' in a ReAct pipeline. The first two parts require factual correction, which is best handled by retrieving knowledge. The third part requires explaining a process, which also benefits from grounding in established concepts. Therefore, 'rag' is the most appropriate tool.",
+    "thought": "The user asks to identify errors in two factual claims (location of Everest, heart rate) and then explain a concept related to agent pipelines (judge agent's choice). The first two parts require factual knowledge, making 'rag' appropriate. The third part is conceptual explanation, which also falls under general knowledge retrieval.",
     "action": "rag",
     "source": "llm_phase1_json"
   },
@@ -758,24 +799,22 @@ FINAL ANSWER: The errors are: Mount Everest is not in South America; it is in As
 
 **Query:** Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.
 
-**Tool/RAG adherence:** Expected tool=`False` rag=`False` → Actual tool=`False` ✅ rag=`True` ❌
+**Tool/RAG adherence:** Expected tool=`False` rag=`False` → Actual tool=`False` ✅ rag=`False` ✅
 
 **ReAct decisions:**
-- Planner: `rag` → rag: Photosynthesis converts carbon dioxide and water into glucose and oxygen.
-Sel...
-- Executor: `rag` → rag: Photosynthesis converts carbon dioxide and water into glucose and oxygen.
-Sel...
+- Planner: `none` → none
+- Executor: `none` → none
 
-**Judge outcome:** Final narrative equals **planner** trajectory (fallback or grounding keywords).
+**Judge outcome:** Final narrative equals **executor** trajectory (judge favoured grounding cue or executor wording).
 
 #### Keyword rubric by pipeline artifact
 
 | Artifact | Net % | Δ vs single | +hits/N₊ | +weight | −hits/N₋ | −penalty | Answer chars |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | Single-pass baseline | 85.7% | — | 6/7 | 85.71% | 0/3 | 0.0% | 2572 |
-| Planner (pre-judge) | 85.7% | +0.0 | 6/7 | 85.71% | 0/3 | 0.0% | 530 |
-| Executor | 85.7% | +0.0 | 6/7 | 85.71% | 0/3 | 0.0% | 1593 |
-| Post-judge final | 85.7% | +0.0 | 6/7 | 85.71% | 0/3 | 0.0% | 530 |
+| Planner (pre-judge) | 85.7% | +0.0 | 6/7 | 85.71% | 0/3 | 0.0% | 677 |
+| Executor | 100.0% | +14.3 | 7/7 | 100.0% | 0/3 | 0.0% | 1507 |
+| Post-judge final | 100.0% | +14.3 | 7/7 | 100.0% | 0/3 | 0.0% | 1507 |
 
 `+weight` divides +hits by **7** (dataset positives). `−penalty` uses divisor **max(1, N₋)** = **3** for this row. **Net** = `max(0, round(+weight − −penalty, 1))`.
 
@@ -783,26 +822,34 @@ Sel...
 
 | Role | used_tool | used_rag |
 |---|:---:|:---:|
-| Planner | False | True |
-| Executor | False | True |
-| Combined (planner ∨ executor) | False | True |
+| Planner | False | False |
+| Executor | False | False |
+| Combined (planner ∨ executor) | False | False |
 
-**Expected (from dataset):** used_tool=`False`, used_rag=`False`  **Actual (combined):** used_tool=`False`, used_rag=`True`
+**Expected (from dataset):** used_tool=`False`, used_rag=`False`  **Actual (combined):** used_tool=`False`, used_rag=`False`
 
 #### Judge outcome (planner vs executor narratives)
 
-Final narrative equals **planner** trajectory (fallback or grounding keywords).
+Final narrative equals **executor** trajectory (judge favoured grounding cue or executor wording).
 
 #### Structured layer (SLM validation / repair)
 
-- First-sample schema-valid: **no**.
-- After validator + repair loop: **no**.
-- Repair iterations recorded: **4**.
-- Outcome: **still failing** schema after repairs.
+- First-sample schema-valid: **yes**.
+- After validator + repair loop: **yes**.
+- Repair iterations recorded: **0**.
+**Emitted record (validated when schema-ok):**
+```json
+{
+  "query": "Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.",
+  "answer": "A structured refinement process involving cycles of thought-action-observation with data validation ensures reliable answers on complex queries like 'How does photosynthesis work?'",
+  "used_tool": false,
+  "used_rag": false
+}
+```
 
 #### Latency (wall-clock in driver)
 
-Single-pass **52.79s**; multi-agent end-to-end **397.80s**.
+Single-pass **52.78s**; multi-agent end-to-end **148.39s**.
 
 **What this proves:** The structured‑output layer produced schema‑valid JSON after repair (first‑attempt validity 60%, 100% after repair). The executor’s answer included all required concepts and matched the schema. This validates the JSON‑validation‑and‑repair loop as a reliable machine‑interface component.
 
@@ -837,38 +884,46 @@ Summarise how a multi‑agent system
 
 **Planner answer:**
 ```
-ANSWER:The multi-agent system employs ReAct loops to iteratively sample and aggregate trajectories of possible answers, ensuring self-consistency. A judge agent evaluates the responses, favoring those with external evidence, while pydantic validators ensure data integrity. Iterative JSON repair corrects discrepancies, leading to a reliable consensus answer for 'How does photosynthesis work?' that cites evidence and adheres to the factual statement that photosynthesis converts carbon dioxide and water into glucose and oxygen.
+ANSWER:
+A multi-agent system employs ReAct loops to iteratively refine its understanding of 'How does photosynthesis work?' by continuously updating its knowledge base with new information. A judge agent evaluates the responses generated by different agents to ensure they meet the required standards. Pydantic validators are used to enforce data integrity and structure, ensuring that the information provided is accurate and consistent. Iterative JSON repair helps in correcting any discrepancies in the data, leading to a reliable and accurate answer for the machine client. The system combines these elements to deliver a coherent explanation of the photosynthesis process.
 ```
 
 
 **Executor answer:**
 ```
-The multi-agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client by:
-
-1. **Generating multiple sampled trajectories** using **ReAct loops**.
-2. **Aggregating** these trajectories via **Self-consistency** to choose a consensus answer.
-3. Employing a **judge agent** to favour answers that cite external or retrieved evidence where available.
-4. Using **pydantic validators** and **iterative JSON repair** to ensure the final output structure is correct, even if the initial generation fails.
-
-This process ensures reliability by combining reasoning (ReAct), validation (Pydantic/JSON repair), and critical evaluation (Judge agent/Self-consistency) based on external evidence.
-
 ***
 
 **Final Answer:**
-The multi-agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client by:
+Since no tool observations were provided, the answer must be constructed based solely on the prompt's description of the process.
 
-1. **Generating multiple sampled trajectories** using **ReAct loops**.
-2. **Aggregating** these trajectories via **Self-consistency** to choose a consensus answer.
-3. Employing a **judge agent** to favour answers that cite external or retrieved evidence where available.
-4. Using **pydantic validators** and **iterative JSON repair** to ensure the final output structure is correct, even if the initial generation fails.
+A multi-agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client by implementing a structured, iterative refinement process.
 
-This process ensures reliability by combining reasoning (ReAct), validation (Pydantic/JSON repair), and critical evaluation (Judge agent/Self-consistency) based on external evidence.
+The core mechanism involves:
+1. **ReAct Loops:** These loops guide the agents through a cycle of thought, action, and observation, allowing the system to break down the complex query ('How does photosynthesis work?') into manageable steps.
+2. **Pydantic Validators:** These validators enforce strict data structures, ensuring that the information gathered at each step conforms to a predefined, reliable schema.
+3. **Judge Agent:** This agent acts as a quality control mechanism, evaluating the output generated by the system to determine its accuracy and completeness relative to the prompt.
+4. **Iterative JSON Repair:** When the output fails validation or the judge agent identifies errors, this mechanism is used to systematically correct the JSON structure and content, allowing the system to refine its answer iteratively until it meets the required reliability standard for the machine client.
+
+In essence, the system combines dynamic reasoning (ReAct), structural enforcement (Pydantic), quality assurance (Judge Agent), and error correction (JSON Repair) to produce a highly reliable, machine-readable summary.
 ```
 
 
 **Final (judge) answer:**
 ```
-ANSWER:The multi-agent system employs ReAct loops to iteratively sample and aggregate trajectories of possible answers, ensuring self-consistency. A judge agent evaluates the responses, favoring those with external evidence, while pydantic validators ensure data integrity. Iterative JSON repair corrects discrepancies, leading to a reliable consensus answer for 'How does photosynthesis work?' that cites evidence and adheres to the factual statement that photosynthesis converts carbon dioxide and water into glucose and oxygen.
+***
+
+**Final Answer:**
+Since no tool observations were provided, the answer must be constructed based solely on the prompt's description of the process.
+
+A multi-agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client by implementing a structured, iterative refinement process.
+
+The core mechanism involves:
+1. **ReAct Loops:** These loops guide the agents through a cycle of thought, action, and observation, allowing the system to break down the complex query ('How does photosynthesis work?') into manageable steps.
+2. **Pydantic Validators:** These validators enforce strict data structures, ensuring that the information gathered at each step conforms to a predefined, reliable schema.
+3. **Judge Agent:** This agent acts as a quality control mechanism, evaluating the output generated by the system to determine its accuracy and completeness relative to the prompt.
+4. **Iterative JSON Repair:** When the output fails validation or the judge agent identifies errors, this mechanism is used to systematically correct the JSON structure and content, allowing the system to refine its answer iteratively until it meets the required reliability standard for the machine client.
+
+In essence, the system combines dynamic reasoning (ReAct), structural enforcement (Pydantic), quality assurance (Judge Agent), and error correction (JSON Repair) to produce a highly reliable, machine-readable summary.
 ```
 
 
@@ -876,12 +931,9 @@ ANSWER:The multi-agent system employs ReAct loops to iteratively sample and aggr
 ```
 [
   {
-    "thought": "The user is asking for an explanation of a complex system involving a multi-agent setup, ReAct loops, a judge agent, pydantic validators, and JSON repair. I need to call the knowledge tool to provide a detailed summary.",
-    "action": "rag",
+    "thought": "The user is asking for an explanation of a complex process involving a multi-agent system, ReAct loops, a judge agent, pydantic validators, and JSON repair. This involves understanding how these components work together to answer a question reliably.",
+    "action": "none",
     "source": "llm_phase1_json"
-  },
-  {
-    "observation": "Photosynthesis converts carbon dioxide and water into glucose and oxygen.\nSelf‑consistency aggregates multiple sampled trajectories before choosing a consensus answer.\nJudge‑style routing favours answers that cite external or retrieved evidence where available."
   },
   {
     "phase": "synthesis"
@@ -893,12 +945,9 @@ ANSWER:The multi-agent system employs ReAct loops to iteratively sample and aggr
 ```
 [
   {
-    "thought": "The user is asking for a comprehensive summary of a complex, multi-faceted technical process involving several advanced AI concepts (Multi-Agent Systems, ReAct, Judge Agent, Pydantic, JSON Repair) applied to a specific knowledge question ('How does photosynthesis work?'). This requires synthesizing knowledge from the corpus, not fetching live data or performing a simple calculation.",
-    "action": "rag",
+    "thought": "The user is asking for a detailed, conceptual summary of how several advanced AI components (multi-agent systems, ReAct, judge agent, Pydantic, JSON repair) work together to answer a complex scientific question ('How does photosynthesis work?'). This requires synthesizing knowledge from the provided context or general AI knowledge, not live data or specific document retrieval.",
+    "action": "none",
     "source": "llm_phase1_json"
-  },
-  {
-    "observation": "Photosynthesis converts carbon dioxide and water into glucose and oxygen.\nSelf‑consistency aggregates multiple sampled trajectories before choosing a consensus answer.\nJudge‑style routing favours answers that cite external or retrieved evidence where available."
   },
   {
     "phase": "synthesis"
@@ -1021,19 +1070,23 @@ See latency columns in the aggregate tables above, and RSS figures in the aggreg
 {
   "programmatic_safe_json": {
     "query": "Two separate tasks: (1) What’s the current weather like in London, and should I take an umbrella? (2) Write a short Python function that calls a weather API via `requests` – show only the code; do not run it or fetch live data.",
-    "answer": "A:The current weather in Bengaluru, India, is 29°C with no indication of rain, so you likely don't need an umbrella. For the Python function to call a weather API, you can use the following code snippet:\n\n```python\nimport requests\n\ndef get_weather(city):\n    api_key = 'your_api_key_here'\n    base_url = f\"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}'\n    response = requests.get(base_url)\n    return response.json()\n\n# Example usage:\n# weather_data = get_weather('Bengaluru')\n# print(weather_data)\n```\nRemember to replace 'your_api_key_here' with your actual API key from OpenWeatherMap. A",
+    "answer": "A:The current weather in London is cloudy with a temperature of +9°C, so yes, you should take an umbrella.\n\n```python\nimport requests\n\ndef get_weather(city):\n    api_key = \"your_api_key\"\n    base_url = \"http://api.weatherapi.com/v1/current.json\"\n    complete_url = f\"{base_url}?key={api_key}&q={city}\"\n    response = requests.get(complete_url)\n    weather_data = response.json()\n    return weather_data['current']['condition']['text']\n\n# Example usage:\n# weather = get_weather(\"London\")\n# print(weather)\n```",
     "used_tool": true,
     "used_rag": false
   },
   "llm": {
     "skipped": false,
     "repair_attempted": true,
-    "raw_first": " {\"query\":\"What's the current weather like in London, and should I take an umbrella? Write a short Python function that calls a weather API via `requests` – show only the code; do not run it or fetch live data.\",\"answer\",\"The current temperature is 29°C with no rain forecasted for Bengaluru. No need to carry an umbrella. A sample get_weather() uses requests library in python.\",true,false}",
-    "valid_first_attempt": false,
-    "parsed_record": null,
-    "valid_final": false,
-    "repairs_used": 4,
-    "raw_final": "…_e short Python function that calls a weather API via `requests` – show only the code; do not run it or fetch live data.\",\"answer\",\"The get_weather() uses requests library to call OpenWeatherMap's Weather API. Replace 'your_api_key_here' with your actual key.\",true,true}\nANSWER:{\"query\":\"What's the current weather like in London, and should I take an umbrella? Write a short Python function that calls a weather API via `requests` – show only the code; do not run it or fetch live data.\",\"answer\",\"The get_weather() uses requests library to call OpenWeatherMap's Weather API. Replace 'your_api_key_here' with your actual key.\",true,true}\nANSWER:{\"query\":\"What's the current weather like in London, and should I take an umbrella? Write a short Python function that calls a weather API via `requests` – show only the code; do not run it or fetch live data.\",\"answer\",\"The get_weather() uses requests library to call OpenWeatherMap's Weather API. Replace 'your_api_key_here' with your actual key.\",true,true}\nANSWER:{\"query\":\"What's the current weather like in London, and should I take an umbrella? Write a short Python function that calls a weather API via `requests` – show only the code; do not run it or fetch live data.\",\"answer\",\"The get_weather() uses requests library to call OpenWeatherMap's Weather API. Replace 'your_api_key_here' with your actual key.\",true,true}\nANSWER:{\"query\":\"What's the current weather like in London, and should I take an umbrella? Write a short Python function that calls a weather API via `requests` – show only the code; do not run it or fetch live data.\",\"answer\",\"The get_weather() uses requests library to call OpenWeatherMap's Weather API. Replace 'your_api_key_here' with your actual key.\",true,true}\nANSWER:{\"query\":\"What's the current weather like in London, and should I take an umbrella? Write a short Python function that calls a weather API via `requests` – show only the code; do not run it or fetch live data.\",\"answer\",\"The get_weather() uses requests library to call OpenWeatherMap's Weather API. Replace 'your_api_key_here' with your actual key.\",true,true}\nANSWER:{\"query\":\"What's the current weather like in London, and should I take an umbrella? Write a short Python function that calls a weather API via `requests` – show only the code; do not run it or fetch live data.\",\"answer\",\"The get_weather() uses requests library to call OpenWeatherMap's Weather API. Replace 'your_api_key_here' with your actual key.\",true,true}\nANSWER:{\"query\":\"What's the current weather like in London, and should I take an umbrella? Write a short Python function that calls a weather API via `requests` – show only the code; do not run it or fetch live data.\",\"answer\",\"The get_weather() uses requests library to call OpenWeatherMap's Weather API. Replace 'your_api_key_here' with your actual key.\",true,true}\nANSWER:{\""
+    "raw_first": " {\"query\": \"What's the current weather like in London, and should I take an umbrella? Write a short Python function that calls a weather API via `requests` – show only the code; do not run it or fetch live data.\", \"answer\": \"The current weather is cloudy with +9°C. Take an umbrella?\", \"used_tool\": true,\"used_rag\": false}",
+    "valid_first_attempt": true,
+    "parsed_record": {
+      "query": "What's the current weather like in London, and should I take an umbrella? Write a short Python function that calls a weather API via `requests` – show only the code; do not run it or fetch live data.",
+      "answer": "The current weather is cloudy with +9°C. Take an umbrella?",
+      "used_tool": true,
+      "used_rag": false
+    },
+    "valid_final": true,
+    "repairs_used": 0
   },
   "llm_attempted_this_case": true
 }
@@ -1046,7 +1099,7 @@ See latency columns in the aggregate tables above, and RSS figures in the aggreg
 ```json
 {
   "query": "Two separate tasks: (1) What’s the current weather like in London, and should I take an umbrella? (2) Write a short Python function that calls a weather API via `requests` – show only the code; do not run it or fetch live data.",
-  "answer": "A:The current weather in Bengaluru, India, is 29°C with no indication of rain, so you likely don't need an umbrella. For the Python function to call a weather API, you can use the following code snippet:\n\n```python\nimport requests\n\ndef get_weather(city):\n    api_key = 'your_api_key_here'\n    base_url = f\"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}'\n    response = requests.get(base_url)\n    return response.json()\n\n# Example usage:\n# weather_data = get_weather('Bengaluru')\n# print(weather_data)\n```\nRemember to replace 'your_api_key_here' with your actual API key from OpenWeatherMap. A",
+  "answer": "A:The current weather in London is cloudy with a temperature of +9°C, so yes, you should take an umbrella.\n\n```python\nimport requests\n\ndef get_weather(city):\n    api_key = \"your_api_key\"\n    base_url = \"http://api.weatherapi.com/v1/current.json\"\n    complete_url = f\"{base_url}?key={api_key}&q={city}\"\n    response = requests.get(complete_url)\n    weather_data = response.json()\n    return weather_data['current']['condition']['text']\n\n# Example usage:\n# weather = get_weather(\"London\")\n# print(weather)\n```",
   "used_tool": true,
   "used_rag": false
 }
@@ -1107,19 +1160,23 @@ See latency columns in the aggregate tables above, and RSS figures in the aggreg
 {
   "programmatic_safe_json": {
     "query": "Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.",
-    "answer": "ANSWER:The multi-agent system employs ReAct loops to iteratively sample and aggregate trajectories of possible answers, ensuring self-consistency. A judge agent evaluates the responses, favoring those with external evidence, while pydantic validators ensure data integrity. Iterative JSON repair corrects discrepancies, leading to a reliable consensus answer for 'How does photosynthesis work?' that cites evidence and adheres to the factual statement that photosynthesis converts carbon dioxide and water into glucose and oxygen.",
+    "answer": "***\n\n**Final Answer:**\nSince no tool observations were provided, the answer must be constructed based solely on the prompt's description of the process.\n\nA multi-agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client by implementing a structured, iterative refinement process.\n\nThe core mechanism involves:\n1. **ReAct Loops:** These loops guide the agents through a cycle of thought, action, and observation, allowing the system to break down the complex query ('How does photosynthesis work?') into manageable steps.\n2. **Pydantic Validators:** These validators enforce strict data structures, ensuring that the information gathered at each step conforms to a predefined, reliable schema.\n3. **Judge Agent:** This agent acts as a quality control mechanism, evaluating the output generated by the system to determine its accuracy and completeness relative to the prompt.\n4. **Iterative JSON Repair:** When the output fails validation or the judge agent identifies errors, this mechanism is used to systematically correct the JSON structure and content, allowing the system to refine its answer iteratively until it meets the required reliability standard for the machine client.\n\nIn essence, the system combines dynamic reasoning (ReAct), structural enforcement (Pydantic), quality assurance (Judge Agent), and error correction (JSON Repair) to produce a highly reliable, machine-readable summary.",
     "used_tool": false,
-    "used_rag": true
+    "used_rag": false
   },
   "llm": {
     "skipped": false,
     "repair_attempted": true,
-    "raw_first": " {\"query\": \"Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.\", \"answer\": \"The multi-agent system employs ReAct loops with self-consistency checks; judges answers based on evidence quality using external sources. Pydantic ensures data integrity while correcting discrepancies iteratively through JSON repairs until consensus is reached, resulting in an accurate and reliable answer about photosynthesis converting CO2 into glucose.\"}\n{\"query\": \"Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.\", \"answer\": \"The summary describes the use of an ensemble approach with self-consistency checks via ReAct; answers are judged by evidence quality through external sources. Pydantic ensures data integrity while discrepancies in responses iteratively undergo repairs until consensus is reached, culminating in accurate and reliable photosynthesis explanation.\"}\n{\"query\": \"Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.\", \"answer\": \"The summary outlines an ensemble approach with self-consistency checks via the 'ReAct' framework; answers are judged by their evidence quality through external sources. Pydantic ensures data integrity while discrepancies in responses iteratively undergo repairs until consensus is reached, culminating in accurate and reliable photosynthesis explanation.\"}\n{\"query\": \"Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.\", \"answer\": \"The summary describes an ensemble approach with self-consistency checks via 'ReAct'; answers are judged by their evidence quality through external sources. Pydantic ensures data integrity while discrepancies in responses iteratively undergo repairs until consensus is reached, culminating in accurate and reliable photosynthesis explanation.\"}\n{\"query\": \"Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.\", \"answer\": \"The summary outlines an ensemble approach with self-consistency checks via 'ReAct'; answers are judged by their evidence quality through external sources. Pydantic ensures data integrity while discrepancies in responses iteratively undergo repairs until consensus is reached, culminating in accurate and reliable photosynthesis explanation.\"}\n{\"query\": \"Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.\", \"answer\": \"The summary describes an ensemble approach with self-consistency checks via 'ReAct'; answers are judged by their evidence quality through external sources. Pydantic ensures data integrity while discrepancies in responses iteratively undergo repairs until consensus is reached, culminating in accurate and reliable photosynthesis explanation.\"}\n{\"query\": \"Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.\", \"answer\": \"The summary outlines an ensemble approach with self-consistency checks via 'ReAct'; answers are judged by their evidence quality through external sources. Pydantic ensures data integrity while discrepancies in responses iteratively undergo repairs until consensus is reached, culminating in accurate and reliable photosynthesis explanation.\"}\n{\"query\": \"Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.\", \"answer\": \"The summary describes an ensemble approach with self-consistency checks via 'ReAct'; answers are judged by their evidence quality through external sources. Pydantic ensures data integrity while discrepancies in responses iteratively undergo repairs until consensus is reached, culminating in accurate and reliable photosynthesis explanation.\"}\n{\"query\": \"Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.\", \"answer\": \"The summary describes an ensemble approach with self-consistency checks via 'ReAct'; answers are judged by their evidence quality through external sources. Pydantic ensures data integrity while discrepancies in responses iteratively undergo repairs until consensus is reached, culminating in accurate and reliable photosynthesis explanation.\"}\n{\"query\": \"Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.\", \"answer\": \"The summary describes an ensemble approach with self-consistency checks via 'ReAct'; answers are judged by their evidence quality through external sources. Pydantic ensures data integrity while discrepancies in responses iteratively undergo repairs until consensus is reached, culminating in accurate and reliable photosynthesis explanation.\"}\n{\"query\": \"Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.\", \"answer\": \"The summary describes an ensemble approach with self-consistency checks via 'ReAct'; answers are judged by their evidence quality through external sources. Pydantic ensures data integrity while",
-    "valid_first_attempt": false,
-    "parsed_record": null,
-    "valid_final": false,
-    "repairs_used": 4,
-    "raw_final": "```json\n{\n  \"query\": \"Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.\",\n  \"answer\":\"A consensus is reached through multiple agents using the ReAct loop mechanism. A judging entity assesses answers based on evidence quality; data integrity checks are performed by Pydantic's validation tools while discrepancies in responses undergo correction via iterative JSON repair, culminating with an accurate explanation of photosynthesis converting CO2 into glucose.\"\n  \"used_tool\": false,\n  \"used_rag\": true\n}\n```"
+    "raw_first": " {\"query\": \"Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.\", \"answer\": \"A structured refinement process involving cycles of thought-action-observation with data validation ensures reliable answers on complex queries like 'How does photosynthesis work?'\", \"used_tool\": false,\"used_rag\": false}",
+    "valid_first_attempt": true,
+    "parsed_record": {
+      "query": "Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.",
+      "answer": "A structured refinement process involving cycles of thought-action-observation with data validation ensures reliable answers on complex queries like 'How does photosynthesis work?'",
+      "used_tool": false,
+      "used_rag": false
+    },
+    "valid_final": true,
+    "repairs_used": 0
   },
   "llm_attempted_this_case": true
 }
@@ -1132,9 +1189,9 @@ See latency columns in the aggregate tables above, and RSS figures in the aggreg
 ```json
 {
   "query": "Summarise how a multi‑agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client.",
-  "answer": "ANSWER:The multi-agent system employs ReAct loops to iteratively sample and aggregate trajectories of possible answers, ensuring self-consistency. A judge agent evaluates the responses, favoring those with external evidence, while pydantic validators ensure data integrity. Iterative JSON repair corrects discrepancies, leading to a reliable consensus answer for 'How does photosynthesis work?' that cites evidence and adheres to the factual statement that photosynthesis converts carbon dioxide and water into glucose and oxygen.",
+  "answer": "***\n\n**Final Answer:**\nSince no tool observations were provided, the answer must be constructed based solely on the prompt's description of the process.\n\nA multi-agent system uses ReAct loops, a judge agent, pydantic validators, and iterative JSON repair to answer ‘How does photosynthesis work?’ reliably for a machine client by implementing a structured, iterative refinement process.\n\nThe core mechanism involves:\n1. **ReAct Loops:** These loops guide the agents through a cycle of thought, action, and observation, allowing the system to break down the complex query ('How does photosynthesis work?') into manageable steps.\n2. **Pydantic Validators:** These validators enforce strict data structures, ensuring that the information gathered at each step conforms to a predefined, reliable schema.\n3. **Judge Agent:** This agent acts as a quality control mechanism, evaluating the output generated by the system to determine its accuracy and completeness relative to the prompt.\n4. **Iterative JSON Repair:** When the output fails validation or the judge agent identifies errors, this mechanism is used to systematically correct the JSON structure and content, allowing the system to refine its answer iteratively until it meets the required reliability standard for the machine client.\n\nIn essence, the system combines dynamic reasoning (ReAct), structural enforcement (Pydantic), quality assurance (Judge Agent), and error correction (JSON Repair) to produce a highly reliable, machine-readable summary.",
   "used_tool": false,
-  "used_rag": true
+  "used_rag": false
 }
 ```
 
