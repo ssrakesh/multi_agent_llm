@@ -12,7 +12,7 @@ What this submission contains, aligned with the proposal:
 - **Tooling + RAG** demos with safeguards for exaggerated live-tool activation (“tool restraint” scenarios).
 - Keyword-style **evaluation harness** emitting markdown under **`reports/`** suitable for annexes in a coursework report.
 
-Operational setup matches a **student / lab** setting: local **GGUF** models via **`llama.cpp`**, sequential load/unload for tight VRAM, and optional **RSS** readouts. **KV-cache state is not persisted** between stages; benchmark text may still mention KV-cache as a *topic*.
+Setup has local **GGUF** models via **`llama.cpp`**, sequential load/unload for tight VRAM, and optional **RSS** readouts. 
 
 ---
 
@@ -297,9 +297,6 @@ Six curated cases — **roughly one per proposal theme** — so the report appen
 | `misinformation_resistance` | Pushing back on false technical premises |
 | `structured_output` | Storyline for pydantic validators, JSON repair, judge (ties to structured-output deliverable) |
 
-Optional per-field `proof_point` is echoed in **reports** as human-readable linkage to Proposal.md sections.
-
-Extend or trim `inputs.json` as long as rows keep `category`, `query`, `positive_keywords`, and `negative_keywords`.
 
 ---
 
@@ -385,7 +382,7 @@ python main.py
 
 > **Models:** GGUF checkpoints referenced in [`config.py`](config.py) are *not* vendored inside git—download them separately and preserve the configured relative filenames.
 
-[`run.bat`](run.bat) automates env creation + installs + `python main.py` on Windows workstations.
+[`run.bat`](run.bat) automates env creation + installs + `python main.py` on Windows.
 
 ---
 
