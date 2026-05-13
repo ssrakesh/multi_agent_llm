@@ -428,31 +428,3 @@ Patches welcome—keep evaluation reproducible (`TEMPERATURE`, sequential loadin
 | RAG grounding | Sentence Transformer embeddings + Faiss nearest neighbors |
 | Resource awareness | GGUF quantization, sequential unloading, coarse RSS metering |
 | Experimental baselines (`inputs.json`) | Mirrors proposal task buckets including structured-output probing |
-
-Deliverable alignment:
-
-- ✅ Code modules for planner / executor / judge / validator / repair.
-- ✅ CLI workflow (`python main`) with verbose trace-friendly logging but quiet GGUF backends by default.
-- ✅ Markdown report detailing tables + appendix suitable for coursework submission.
-
-Outstanding optional stretch goals (beyond this README snapshot): hosted judge SLM, richer ablation CLI flags, lightweight interactive demos.
-
----
-
-## Notes (academic scope)
-
-Treat scores and tooling behaviour as **evidence for a written report**, not benchmarks for a shipped product:
-
-1. Keyword rubrics are **deliberately simple** for transparency and reproducibility in grading.
-2. The live weather stub is **pedagogical** (real HTTP), not monitored infrastructure.
-3. Extend [`inputs.json`](inputs.json) and [`Proposal.md`](Proposal.md) together when you revise hypotheses for your submission.
-
----
-
-## Appendix: why this differs from production software
-
-| Aspect | Here (course) | Typical product |
-|--------|----------------|----------------|
-| Goal | Explain methods + show measurements | Reliable UX, compliance, uptime |
-| Quality bar | Readable logs + appendix markdown | Alerts, quotas, retries, audits |
-| Models | Bring-your-own GGUF paths | Managed APIs + routing |
