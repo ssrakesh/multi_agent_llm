@@ -34,7 +34,6 @@ def _extract_city_from_query(query):
     return "Bengaluru"
 
 def _live_weather_intent(query):
-
     ql = query.lower()
 
     coding = (
@@ -98,38 +97,32 @@ def _heuristic_action(query, benchmark_category):
 
     return "none", "Heuristic: no tool or retrieval required."
 
-
-def _parse_action_json(raw_text):
-
-    blob = Validator.extract_json_object(raw_text)
-
-    if blob is None:
-        return None
-
-    try:
-
-        data = json.loads(blob)
-
-        action = str(data.get("action", "")).lower().strip()
-        thought = str(data.get("thought", "")).strip()
-        if action not in {"weather", "rag", "none"}:
-            return None
-
-        return {"thought": thought, "action": action}
-
-    except json.JSONDecodeError as exc:
-
-        error_log(
-            "ReAct phase-1 action JSON malformed",
-            exc,
-            stack=False,
-        )
-
-        return None
-
-def _strip_think_tags(text):
-    # Remove thinking blocks that reasoning models wrap their output in.
+# ------------------------------------------------------------------
+#   Strip <think> tags
+# ------------------------------------------------------------------
+def strip_think_tags(text: str) -> str:
+    """Remove reasoning blocks that reasoning models might output."""
     return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+
+
+def parse_action_from_text(text: str):
+    """Return (action, thought, city) or None."""
+    text = strip_think_tags(text)
+    decoder = json.JSONDecoder()
+    idx = text.find("{")
+    if idx == -1:
+        return None
+    try:
+        obj, end = decoder.raw_decode(text, idx)
+        if isinstance(obj, dict):
+            action = obj.get("action", "").lower().strip()
+            thought = obj.get("thought", "")
+            city = obj.get("city", "").strip() or None
+            if action in ("weather", "rag", "none"):
+                return action, thought, city
+    except json.JSONDecodeError:
+        pass
+    return None
 
 def run_react_agent(
     llm,
@@ -175,8 +168,8 @@ def run_react_agent(
         ),
         max_tokens=MAX_REACT_JSON_TOKENS,
     )
-    phase1_clean = _strip_think_tags(phase1)  # strip before JSON parsing
-    parsed = _parse_action_json(phase1_clean)
+    phase1_clean = strip_think_tags(phase1)  # strip before JSON parsing
+    parsed = parse_action_from_text(phase1_clean)
 
     if parsed is None:
         action, rationale = _heuristic_action(query, benchmark_category)
@@ -198,8 +191,9 @@ def run_react_agent(
 
     else:
 
-        action = parsed["action"]
-        thought = parsed["thought"]
+        action = parsed[0]
+        thought = parsed[1]
+        city = parsed[2]
 
         react_log(
             role,
@@ -228,19 +222,13 @@ def run_react_agent(
             action = "none"
 
     if action == "weather":
-        city = _extract_city_from_query(query)
-        stage_log(
-            "TOOL",
-            f"{role}: Action=weather — live API call for '{city}'.",
-        )
+        city = parsed.get("city") if parsed and parsed.get("city") else _extract_city_from_query(query)
+        stage_log("TOOL", f"{role}: Action=weather — live API call for '{city}'.")
         obs = tools["weather"](city)
         observations.append(obs)
         used_tool = True
         react_trace.append({"observation": obs})
-        react_log(
-            role,
-            f"{case_tag}Observation: weather payload (city={city}, keys={list(obs)[:3]}...)",
-        )
+        react_log(role, f"{case_tag}Observation: weather payload (city={city}, keys={list(obs)[:3]}...)")
 
     elif action == "rag":
 

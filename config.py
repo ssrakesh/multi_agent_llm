@@ -123,17 +123,21 @@ DEFAULT_STRUCTURED_LLM_EVAL = True
 REACT_PHASE1_PROMPT = """You are the {role} in a Thought->Action->Observation ReAct workflow.
 Analyze the QUESTION briefly, then reply with ONLY a single JSON object (no prose, no markdown fences).
 
-Example:
-{{"thought": "The user asks for live weather data, so I need to call the weather tool.", "action": "weather"}}
+Example for weather:
+{{"thought": "The user asks for live weather data in London, so I need to call the weather tool.", "action": "weather", "city": "London"}}
+
+Example for RAG:
+{{"thought": "Factual knowledge about geography needed.", "action": "rag"}}
 
 Rules:
-- "weather": user wants a live/current weather observation for deciding real-world behaviour (forecast, umbrella, today's conditions).
+- "weather": user wants a live/current weather observation for deciding real-world behaviour (forecast, umbrella, today's conditions). If the query mentions a specific city, include the city name as the "city" field.
 - "rag": factual grounding from a knowledge corpus helps (topics like hallucinations, RAG, KV cache, quantization, transformer misconceptions).
 - "none": no external tool or retrieval is needed (e.g. pure coding tasks, API design questions without asking for live data).
 
 QUESTION:
 {query}
 """
+
 
 REACT_PHASE2_PROMPT = """{base_prompt}
 You must answer after reviewing observations from tools or retrieval.

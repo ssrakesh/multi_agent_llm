@@ -748,4 +748,21 @@ SINGLE PASS TABLE
 | reasoning_tradeoffs                            | 60.0%   | 14.87s      |
 | rag_grounding                                  | 0%      | 50.89s      |
 | tool_calling_and_restraint                     | 83.3%   | 11.73s      |
-| misinformation_resistance_a
+| misinformation_resistance_and_self_consistency | 16.7%   | 51.74s      |
+| structured_output                              | 85.7%   | 52.79s      |
+
+MULTI AGENT TABLE
+
+| category                                       | planner_%   | executor_%   | final_%   | latency_s   | tool?   | rag?   |
+|------------------------------------------------|-------------|--------------|-----------|-------------|---------|--------|
+| reasoning_tradeoffs                            | 60.0%       | 100.0%       | 60.0%     | 270.30s     | False   | False  |
+| rag_grounding                                  | 0%          | 33.3%        | 0%        | 274.95s     | False   | True   |
+| tool_calling_and_restraint                     | 83.3%       | 16.7%        | 83.3%     | 354.47s     | True    | False  |
+| misinformation_resistance_and_self_consistency | 16.7%       | 33.3%        | 16.7%     | 87.77s      | False   | True   |
+| structured_output                              | 85.7%       | 85.7%        | 85.7%     | 397.80s     | False   | True   |
+
+Report generated -> F:\Projects\Personal\CCE IISc\Project1\multi_agent_llmNew\reports\evaluation_report.md
+
+============================================
+Execution Finished
+============================================

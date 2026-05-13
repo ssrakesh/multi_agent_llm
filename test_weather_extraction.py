@@ -32,7 +32,7 @@ def extract_city_from_query(query: str) -> str:
 # 2.  Strip <think> tags
 # ------------------------------------------------------------------
 def strip_think_tags(text: str) -> str:
-    """Remove reasoning blocks that Phi‑4‑mini‑reasoning might output."""
+    """Remove reasoning blocks that reasoning models might output."""
     return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
 
@@ -40,9 +40,8 @@ def strip_think_tags(text: str) -> str:
 # 3.  Parse the phase‑1 JSON decision
 # ------------------------------------------------------------------
 def parse_action_from_text(text: str):
-    """Try to extract action from model output, returning ('action', 'thought') or None."""
+    """Return (action, thought, city) or None."""
     text = strip_think_tags(text)
-    # Find the first '{' and try to parse JSON
     decoder = json.JSONDecoder()
     idx = text.find("{")
     if idx == -1:
@@ -52,12 +51,12 @@ def parse_action_from_text(text: str):
         if isinstance(obj, dict):
             action = obj.get("action", "").lower().strip()
             thought = obj.get("thought", "")
+            city = obj.get("city", "").strip() or None
             if action in ("weather", "rag", "none"):
-                return action, thought
+                return action, thought, city
     except json.JSONDecodeError:
         pass
     return None
-
 
 # ------------------------------------------------------------------
 # 4.  Main test for a single query
@@ -77,7 +76,7 @@ def test_weather_query(query: str):
     raw_output = llm.generate(prompt, max_tokens=320)
 
     # Print the raw output (for debugging)
-    print(f"[MODEL RAW OUTPUT]\n{raw_output[:200]}...\n")
+    print(f"[MODEL RAW OUTPUT]\n{raw_output}\n")
 
     # Parse the decision
     parsed = parse_action_from_text(raw_output)
@@ -86,18 +85,21 @@ def test_weather_query(query: str):
         # Fallback heuristic (same as planner.py)
         ql = query.lower()
         if "weather" in ql and ("today" in ql or "umbrella" in ql or "forecast" in ql):
-            action, thought = "weather", "Heuristic fallback: live weather intent detected."
+            action, thought, city = parsed, "Heuristic fallback: live weather intent detected.", None
         else:
             action, thought = "none", "Heuristic fallback: no tool."
     else:
-        action, thought = parsed
+        action = parsed[0]
+        thought = parsed[1]
+        city = parsed[2]
 
     print(f"Thought: {thought}")
     print(f"Action : {action}")
+    print(f"City : {city}")
 
     # If action is weather, dynamically extract city and call tool
     if action == "weather":
-        city = extract_city_from_query(query)
+        
         print(f"\nExtracted city: {city}")
         print("[TOOL] Calling weather_tool...")
         obs = weather_tool(city)
