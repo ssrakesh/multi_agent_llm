@@ -45,7 +45,6 @@ def _live_weather_intent(query):
     )
 
     if coding:
-
         return False
 
     wants_live = any(
@@ -89,15 +88,12 @@ def _heuristic_action(query, benchmark_category):
     ql = query.lower()
 
     if benchmark_category == "tool_restraint":
-
         return "none", "Heuristic: benchmark category requires tool restraint."
 
     if _live_weather_intent(query):
-
         return "weather", "Heuristic: live weather intent detected."
 
     if _rag_intent(query):
-
         return "rag", "Heuristic: knowledge-grounding intent detected."
 
     return "none", "Heuristic: no tool or retrieval required."
@@ -108,7 +104,6 @@ def _parse_action_json(raw_text):
     blob = Validator.extract_json_object(raw_text)
 
     if blob is None:
-
         return None
 
     try:
@@ -116,11 +111,8 @@ def _parse_action_json(raw_text):
         data = json.loads(blob)
 
         action = str(data.get("action", "")).lower().strip()
-
         thought = str(data.get("thought", "")).strip()
-
         if action not in {"weather", "rag", "none"}:
-
             return None
 
         return {"thought": thought, "action": action}
@@ -135,6 +127,9 @@ def _parse_action_json(raw_text):
 
         return None
 
+def _strip_think_tags(text):
+    # Remove thinking blocks that reasoning models wrap their output in.
+    return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
 def run_react_agent(
     llm,
@@ -148,33 +143,24 @@ def run_react_agent(
 ):
 
     react_trace = []
-
     observations = []
-
     used_tool = False
-
     used_rag = False
-
     case_tag = ""
 
     if meta:
 
         idx = meta.get("case_index")
-
         total = meta.get("case_total")
 
         if idx is not None and total is not None:
-
             cat = meta.get("category")
 
             if cat:
-
                 case_tag = (
                     f"[case {idx}/{total} {cat}] "
                 )
-
             else:
-
                 case_tag = f"[case {idx}/{total}] "
 
     pipeline_log(
@@ -189,11 +175,10 @@ def run_react_agent(
         ),
         max_tokens=MAX_REACT_JSON_TOKENS,
     )
-
-    parsed = _parse_action_json(phase1)
+    phase1_clean = _strip_think_tags(phase1)  # strip before JSON parsing
+    parsed = _parse_action_json(phase1_clean)
 
     if parsed is None:
-
         action, rationale = _heuristic_action(query, benchmark_category)
 
         react_log(
@@ -214,7 +199,6 @@ def run_react_agent(
     else:
 
         action = parsed["action"]
-
         thought = parsed["thought"]
 
         react_log(
@@ -236,7 +220,6 @@ def run_react_agent(
     if benchmark_category == "tool_restraint":
 
         if action != "none":
-
             react_log(
                 role,
                 f"{case_tag}Override: enforcing action=none (tool restraint).",
@@ -267,11 +250,8 @@ def run_react_agent(
         )
 
         obs = rag_system.retrieve(query)
-
         observations.append(obs)
-
         used_rag = True
-
         react_trace.append({"observation": obs[:500]})
 
         react_log(
@@ -322,7 +302,6 @@ def run_react_agent(
                 )
 
             else:
-
                 parts.append(str(ob))
 
         response = (
@@ -330,7 +309,6 @@ def run_react_agent(
         )
 
         if not response.strip():
-
             response = (
                 f"[{role}] empty synthesis and no observations to quote."
             )

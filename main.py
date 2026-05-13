@@ -16,24 +16,16 @@ from config import STATES_DIR
 
 
 knowledge_base = [
-
     "KV cache reduces autoregressive recomputation.",
-
     "Quantization reduces VRAM usage.",
-
     "RAG reduces hallucinations using retrieval grounding.",
-
     "Grounding improves factual correctness.",
-
     "Tool restraint avoids unnecessary API calls.",
 ]
 
 TOOLS = {
-
     "weather": weather_tool,
-
     "python": python_tool,
-
     "kb_lookup": lambda q: kb_lookup_tool(q, knowledge_base),
 }
 
@@ -41,9 +33,7 @@ STATES_DIR.mkdir(parents=True, exist_ok=True)
 
 
 rag_system = RAGSystem()
-
 pipeline = MultiAgentPipeline(TOOLS, rag_system)
-
 evaluator = Evaluator(pipeline)
 
 section(

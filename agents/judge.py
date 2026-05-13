@@ -132,7 +132,6 @@ def _looks_placeholder(txt):
 def _technical_ground_score(text):
 
     raw = text.lower()
-
     tl = raw.replace("-", " ")
 
     s = sum(
@@ -175,41 +174,29 @@ def judge_try_llm(
 ):
 
     from config import (
-        JUDGE_LLM_PROMPT,
-        JUDGE_PROMPT,
+        JUDGE_LLM_PROMPT,        
         JUDGE_TEMPERATURE,
         MAX_JUDGE_NEW_TOKENS,
     )
 
     planner = str(planner_answer).strip()
-
     executor = str(executor_answer).strip()
 
     rag_note = (
-
         "yes — telemetry shows retrieval and/or external tool payloads "
         "were available to the agents."
-
         if (
             combined_rag
             or combined_tool
         )
-
         else (
             "both trajectories relied on plain generation only — "
             "judge specificity, correctness, and refusal patterns."
         )
-
     )
 
     prompt = JUDGE_LLM_PROMPT.format(
-        base_judge=JUDGE_PROMPT.strip(),
-        rag_note=rag_note,
         query=_clip(query, 4000),
-        hints=_clip(
-            observation_hints or "(none)",
-            3500,
-        ),
         planner=_clip(planner, 6000),
         executor=_clip(executor, 6000),
     )
@@ -225,6 +212,7 @@ def judge_try_llm(
         prompt,
         max_tokens=MAX_JUDGE_NEW_TOKENS,
         temperature=JUDGE_TEMPERATURE,
+        repeat_penalty=1.2,   # Discourage repetition of the input
     )
 
     blob = Validator.extract_json_object(raw)
@@ -239,7 +227,6 @@ def judge_try_llm(
         return None
 
     try:
-
         data = json.loads(blob)
 
     except json.JSONDecodeError:
@@ -316,7 +303,6 @@ def judge_heuristic(
 ):
 
     planner = str(planner).strip()
-
     executor = str(executor).strip()
 
     pipeline_log(
@@ -333,7 +319,6 @@ def judge_heuristic(
     ):
 
         tl = cand.lower()
-
         tl_compact = tl.replace("_", "").replace(" ", "")
 
         if (
@@ -354,7 +339,6 @@ def judge_heuristic(
             return cand
 
     sp = _technical_ground_score(planner)
-
     se = _technical_ground_score(executor)
 
     if max(
@@ -389,11 +373,8 @@ def judge_heuristic(
         return pick
 
     hb = _hint_blob(observation_hints)
-
     toks = _hint_tokens(hb)
-
     op = _overlap_hits(planner, toks)
-
     oe = _overlap_hits(executor, toks)
 
     if (
@@ -487,7 +468,6 @@ def judge_agent(
 ):
 
     planner = str(answers[0]).strip()
-
     executor = str(answers[1]).strip()
 
     if not enabled:
@@ -514,7 +494,6 @@ def judge_agent(
         )
 
         if resolved is not None:
-
             return resolved
 
         pipeline_log(

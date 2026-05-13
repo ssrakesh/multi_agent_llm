@@ -39,8 +39,8 @@ AGENT_MODELS = {
     # ),
     # Strong reasoning + decomposition for planning tasks
     "planner": (
-        "models/Phi-4-mini-reasoning-GGUF/"
-        "Phi-4-mini-reasoning-Q4_K_M.gguf"
+        "models/Phi-4-mini-instruct-GGUF/"
+        "Phi-4-mini-instruct-Q4_K_M.gguf"
     ),
 
     # Better grounded answering and RAG integration
@@ -51,8 +51,8 @@ AGENT_MODELS = {
 
     # Lightweight and fast for trajectory comparison/self-consistency
     "judge": (
-        "models/Qwen3.5-2B-GGUF/"
-        "Qwen3.5-2B-Q4_K_M.gguf"
+        "models/Phi-4-mini-instruct-GGUF/"
+        "Phi-4-mini-instruct-Q4_K_M.gguf"
     ),
 
     # Stable JSON and structured output generation
@@ -60,10 +60,10 @@ AGENT_MODELS = {
     #     "models/Phi-4-mini-reasoning-GGUF/"
     #     "Phi-4-mini-reasoning-Q4_K_M.gguf"
     # ),
-    # use non‑reasoning model to avoid toomany replay in think block in reasoning phi4 model.
+    # use non‑reasoning model to avoid too many replay in think block in reasoning phi4 model.
     "structured": (
-        "models/Phi-3-mini-4k-instruct-gguf/"
-        "Phi-3-mini-4k-instruct-q4.gguf"
+        "models/Phi-4-mini-instruct-GGUF/"
+        "Phi-4-mini-instruct-Q4_K_M.gguf"
     ),
 }
 MAX_CONTEXT_TOKENS = 8192
@@ -73,12 +73,11 @@ MAX_NEW_TOKENS = 128
 # ReAct phase-1 is a single JSON blob; phase-2 must answer substantively — the same
 # 128-token cap as chat caused placeholder answers ("ANSWER: RESPONSE") and empty
 # executor completions while single-pass baseline used BASELINE_PROMPT + 512 tokens.
-MAX_REACT_JSON_TOKENS = 320
+MAX_REACT_JSON_TOKENS = 480       
 
-MAX_REACT_SYNTHESIS_TOKENS = 896
+MAX_REACT_SYNTHESIS_TOKENS = 1024 
 
-# Structured conformance + repair (JSON object + possible reasoning preamble).
-MAX_STRUCTURED_LLM_TOKENS = 1152
+
 
 # Single-pass baseline: raw `query` alone often yields **empty** completions from
 # instruction/reasoning GGUFs via llama.cpp; wrap + allow more budget than agents.
@@ -96,9 +95,13 @@ MAX_BASELINE_NEW_TOKENS = 512
 
 TEMPERATURE = 0.3
 
+
 TOP_P = 0.9
 
-STRUCTURED_TEMPERATURE = 0.12
+# Structured conformance + repair (JSON object + possible reasoning preamble).
+MAX_STRUCTURED_LLM_TOKENS = 1152
+
+STRUCTURED_TEMPERATURE = 0.0
 
 STRUCTURED_REPEAT_PENALTY = 1.15
 
@@ -144,30 +147,24 @@ OBSERVATIONS (may be empty):
 Write a concise final answer for the user. Prefer reusing factual phrases from the question and OBSERVATIONS (exact wording when helpful).
 """
 
-STRUCTURED_JSON_PROMPT = """You output ONLY one JSON object for a downstream parser. Breaking these rules corrupts downstream systems:
+STRUCTURED_JSON_PROMPT = """Output ONLY a single JSON object with exactly these keys: "query", "answer", "used_tool", "used_rag".
 
 Rules:
-- First non-whitespace character must be {{ and the last non-whitespace must be }} — nothing before or after.
-- The "answer" value must be a non‑empty string.
-- No markdown, no code fences/backticks, no "Final Answer" headers, no LaTeX or \\boxed{{}} or \\text{{}} anywhere.
-- The "answer" value must be a single UTF-8 string of plain explanatory prose — compress NATURAL_ANSWER into coherent text once (no repetitions).
+- No extra text before or after.
+- No markdown, no backticks, no explanations.
+- "answer" must be a short plain-text summary (max 200 chars).
+- Booleans must be true/false (no quotes).
 
-Required keys and types exactly: "query" (string), "answer" (string), "used_tool" (boolean), "used_rag" (boolean).
-Use DOUBLE quotes for all JSON keys and string values only.
-
-Example shape (substitute values):
-{{"query":"...","answer":"...","used_tool":false,"used_rag":false}}
-
-QUERY (copy verbatim into "query"):
+Copy "query" verbatim from below:
 {query}
 
-NATURAL_ANSWER (transcribe once into plain "answer"):
+Summary of "answer" (use this, but compress to one short sentence):
 {natural_answer}
 
-FLAGS ("used_tool"/"used_rag" booleans MUST match exactly):
-used_tool={used_tool}
-used_rag={used_rag}
-"""
+used_tool = {used_tool}
+used_rag = {used_rag}
+
+JSON output:"""
 
 REPAIR_JSON_PROMPT = """Rebuild EXACTLY one compact JSON object for this schema fields:
 {{"query": string, "answer": string, "used_tool": boolean, "used_rag": boolean}}
@@ -211,33 +208,23 @@ USE_LLM_JUDGE = True
 
 MAX_JUDGE_NEW_TOKENS = 320
 
-JUDGE_TEMPERATURE = 0.15
+JUDGE_TEMPERATURE = 0.0
 
-JUDGE_LLM_PROMPT = """{base_judge}
+JUDGE_LLM_PROMPT = """You are a judge. Compare the two answers below.
 
-Pick the better answer for the user question. Prefer factually grounded, specific, non-refusal text.
-If one answer is a meta-instruction (e.g. "your answer should include…") and the other is substantive, pick the substantive one.
-If retrieval/tool context was used ({rag_note}), slightly prefer the answer that uses that evidence appropriately.
+STRICT RULES:
+- Output ONLY one JSON object.
+- No explanations, no markdown, no extra text.
+- Exactly one of these two:
+  {{"choice": "planner"}}
+  {{"choice": "executor"}}
 
-Return ONLY one JSON object (no markdown fences, no commentary), for example:
-{{"choice":"executor","reason":"The executor answer cites retrieved evidence more directly."}}
-Optional: {{"choice":"planner","reason":"one short phrase"}}
-Your entire response must start with {{ and end with }}.
+Question: {query}
 
-QUESTION:
-{query}
-
-OBSERVATION / TOOL HINTS (may be empty):
-{hints}
-
-ANSWER_PLANNER (trajectory 1):
+Answer A (planner):
 {planner}
 
-ANSWER_EXECUTOR (trajectory 2):
+Answer B (executor):
 {executor}
-"""
 
-JUDGE_PROMPT = """
-You are a judge agent comparing two candidate answers to the same user question.
-Be concise and decisive; output only the requested JSON decision object.
-"""
+JSON output:"""

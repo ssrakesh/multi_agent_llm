@@ -1,5 +1,4 @@
 import json
-
 from logger import pipeline_log
 
 
@@ -8,7 +7,6 @@ def _repair_bad_clip(blob, limit):
     s = str(blob).strip()
 
     if len(s) <= limit:
-
         return s
 
     return (
